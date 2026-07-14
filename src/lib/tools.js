@@ -114,6 +114,7 @@ export const TOOLS = [
     tagline: 'Full scripts with hooks, timestamps & CTAs',
     icon: Clapperboard,
     color: 'from-red-500 to-orange-500',
+    credits: { basic: 2, advanced: 3 }, // long-form scripts = heavy output
     fields: [
       { key: 'topic', label: 'Video topic', type: 'text', placeholder: 'e.g. 5 side hustles for Nigerian students in 2026', required: true },
       { key: 'length', label: 'Target length', type: 'select', options: ['Short (under 60s)', '5 minutes', '10 minutes', '15+ minutes'] },
@@ -168,6 +169,7 @@ export const TOOLS = [
     icon: Recycle,
     color: 'from-emerald-500 to-teal-500',
     platformAware: true,
+    credits: { basic: 2, advanced: 3 }, // long input + multiple outputs = heavy
     fields: [
       { key: 'topic', label: 'Paste your long-form content', type: 'textarea', placeholder: 'Paste a blog post, video script, or newsletter…', required: true },
       { key: 'formats', label: 'Output formats', type: 'multi', options: ['X thread', 'IG carousel', 'Shorts/Reels script', 'WhatsApp broadcast', 'LinkedIn post'] },

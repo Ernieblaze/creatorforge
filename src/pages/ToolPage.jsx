@@ -98,14 +98,15 @@ function LengthPicker({ length, setLength }) {
 }
 
 /* ═══════════════════ Basic / Advanced mode picker ═══════ */
-function ModePicker({ mode, setMode, remaining }) {
+function ModePicker({ mode, setMode, remaining, costs }) {
   return (
     <div>
       <label className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Response quality</label>
       <div className="grid grid-cols-2 gap-2">
         {['basic', 'advanced'].map((m) => {
           const active = mode === m
-          const tooPricey = MODES[m].credits > remaining
+          const price = costs?.[m] ?? MODES[m].credits
+          const tooPricey = price > remaining
           return (
             <button
               key={m}
@@ -122,7 +123,7 @@ function ModePicker({ mode, setMode, remaining }) {
                   {m === 'advanced' && '✨ '}{MODES[m].label}
                 </span>
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${tooPricey ? 'bg-slate-200 text-slate-400 dark:bg-ink-700' : 'bg-brand-500/15 text-brand-600 dark:text-brand-300'}`}>
-                  {MODES[m].credits} cr
+                  {price} cr
                 </span>
               </span>
               <span className="mt-0.5 block text-[11px] leading-snug text-slate-400">{MODES[m].blurb}</span>
@@ -323,8 +324,13 @@ function GenericTool({ tool }) {
 
   // Viral & calendar produce heavy structured output → fixed Advanced cost,
   // no mode toggle. Everything else lets the user pick Basic/Advanced.
+  // Heavy tools (long scripts, repurposing) declare their own credit prices.
   const isStructured = tool.special === 'viral' || tool.special === 'calendar'
-  const cost = isStructured ? CREDIT_COST.advanced : CREDIT_COST[mode]
+  const toolCosts = {
+    basic: tool.credits?.basic ?? CREDIT_COST.basic,
+    advanced: tool.credits?.advanced ?? CREDIT_COST.advanced,
+  }
+  const cost = isStructured ? toolCosts.advanced : toolCosts[mode]
 
   useEffect(() => {
     setValues(Object.fromEntries((tool.fields || []).map((f) => [f.key, f.type === 'multi' ? [] : f.type === 'select' ? f.options[0] : f.key === 'topic' ? prefillTopic : ''])))
@@ -450,7 +456,7 @@ function GenericTool({ tool }) {
             </div>
           ))}
           {!isStructured && <LengthPicker length={length} setLength={setLength} />}
-          {!isStructured && <ModePicker mode={mode} setMode={setMode} remaining={usage?.remaining ?? cost} />}
+          {!isStructured && <ModePicker mode={mode} setMode={setMode} remaining={usage?.remaining ?? cost} costs={toolCosts} />}
 
           <button onClick={run} disabled={!canGenerate || loading || (usage && usage.remaining < cost)} className="btn-primary w-full !py-3">
             {loading ? <><Spinner size={17} /> Forging…</> : <><Sparkles size={17} /> Generate <span className="opacity-70">· {cost} cr</span></>}

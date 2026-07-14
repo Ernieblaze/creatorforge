@@ -12,7 +12,7 @@ const LS_USAGE = 'cf_daily_usage'
 
 // Daily credit budgets. Basic generation = 1 credit, Advanced = 2.
 export const CREDIT_COST = { basic: 1, advanced: 2 }
-export const FREE_DAILY_CREDITS = 4
+export const FREE_DAILY_CREDITS = 5
 export const PREMIUM_DAILY_CREDITS = 50 // "unlimited" fair-use safety cap
 export const PLANS = {
   free: { name: 'Free', dailyCredits: FREE_DAILY_CREDITS, price: 0 },

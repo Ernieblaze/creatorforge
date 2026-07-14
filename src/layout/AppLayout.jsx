@@ -109,6 +109,15 @@ export default function AppLayout() {
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-slate-200 bg-white/85 px-4 backdrop-blur-xl lg:hidden dark:border-ink-700 dark:bg-ink-900/85">
         <Link to="/app"><Logo /></Link>
         <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Link
+              to="/admin"
+              aria-label="Admin dashboard"
+              className="grid h-9 w-9 place-items-center rounded-xl border border-brand-500/40 bg-brand-500/10 text-brand-500"
+            >
+              <ShieldCheck size={16} />
+            </Link>
+          )}
           <ThemeToggle />
           <button onClick={signOut} aria-label="Sign out" className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 text-slate-400 dark:border-ink-600">
             <LogOut size={16} />
