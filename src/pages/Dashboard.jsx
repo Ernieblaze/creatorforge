@@ -129,6 +129,20 @@ export default function Dashboard() {
             )
           })}
         </div>
+
+        {/* One-tap caption shortcuts → Post Generator with the platform preselected */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Quick captions:</span>
+          {['WhatsApp', 'Instagram', 'TikTok', 'Facebook', 'X (Twitter)', 'LinkedIn'].map((p) => (
+            <Link
+              key={p}
+              to={`/app/tool/post-generator?platform=${encodeURIComponent(p)}`}
+              className="rounded-full border border-slate-300 px-3.5 py-1.5 text-xs font-semibold text-slate-500 transition-colors hover:border-brand-400 hover:text-brand-500 dark:border-ink-600 dark:text-slate-400"
+            >
+              {p.replace(' (Twitter)', '')} caption
+            </Link>
+          ))}
+        </div>
       </section>
 
       <div className="grid gap-6 lg:grid-cols-2">

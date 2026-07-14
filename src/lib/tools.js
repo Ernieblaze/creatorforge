@@ -110,19 +110,24 @@ export const TOOLS = [
   },
   {
     id: 'yt-script',
-    name: 'YouTube Scripter',
-    tagline: 'Full scripts with hooks, timestamps & CTAs',
+    name: 'Video Scripter',
+    tagline: 'Scripts for YouTube, TikTok, Reels & Shorts',
     icon: Clapperboard,
     color: 'from-red-500 to-orange-500',
     credits: { basic: 2, advanced: 3 }, // long-form scripts = heavy output
     fields: [
       { key: 'topic', label: 'Video topic', type: 'text', placeholder: 'e.g. 5 side hustles for Nigerian students in 2026', required: true },
-      { key: 'length', label: 'Target length', type: 'select', options: ['Short (under 60s)', '5 minutes', '10 minutes', '15+ minutes'] },
+      { key: 'platform', label: 'Platform', type: 'select', options: ['YouTube', 'TikTok', 'Instagram Reels', 'YouTube Shorts', 'Facebook Video'] },
+      { key: 'format', label: 'Format', type: 'select', options: ['Short-form (under 60s)', 'Medium (3–5 min)', 'Long-form (8–15+ min)'] },
       { key: 'tone', label: 'Style', type: 'select', options: TONES },
     ],
-    system: BASE_PERSONA + ' You write complete YouTube scripts: retention-engineered hook, timestamped sections, b-roll/visual cues, pattern interrupts, and a strong CTA.',
+    system: BASE_PERSONA + ` You write complete, ready-to-film video scripts, adapted to the platform and format:
+- Short-form (TikTok/Reels/Shorts): second-by-second pacing — a 0–2s pattern-interrupt hook, fast beats every few seconds, on-screen text cues, a loop-friendly ending or hard CTA. Script timestamps in seconds (0:00–0:03 style).
+- Medium: a tight structure — hook, promise, 3–4 delivering sections, CTA. Timestamps in minutes.
+- Long-form (YouTube): retention-engineered — cold-open hook, intro promise, chaptered sections with pattern interrupts and open loops between them, mid-roll re-hook, end-screen CTA.
+Always include [VISUAL] / [ON-SCREEN TEXT] / [B-ROLL] cues alongside the spoken lines.`,
     buildPrompt: (v) =>
-      `Topic: ${v.topic}\nLength: ${v.length}\nStyle: ${v.tone}\nWrite the full script with timestamps, spoken lines, [VISUAL] cues, and end-screen CTA.`,
+      `Topic: ${v.topic}\nPlatform: ${v.platform}\nFormat: ${v.format}\nStyle: ${v.tone}\nWrite the full ready-to-film script for this platform and format: timestamps, spoken lines, [VISUAL]/[ON-SCREEN TEXT] cues, and the platform-appropriate CTA.`,
   },
   {
     id: 'ad-generator',

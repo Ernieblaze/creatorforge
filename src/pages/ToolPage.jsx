@@ -72,6 +72,42 @@ function LimitBanner({ usage }) {
   )
 }
 
+/* ═══════════════════ One-time premium upsell modal ═══════ */
+function UpsellModal({ onClose }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.94, y: 16 }} animate={{ scale: 1, y: 0 }}
+        className="card w-full max-w-sm overflow-hidden text-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="bg-gradient-to-br from-brand-600 to-accent-600 px-6 pb-8 pt-9 text-white">
+          <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white/15">
+            <Crown size={28} />
+          </span>
+          <p className="mt-4 text-lg font-extrabold">That was Advanced mode ✨</p>
+          <p className="mt-1.5 text-sm text-white/85">
+            Hook variants, hashtag strategy, posting times — that's what every generation
+            feels like on Premium. Unlimited, every day.
+          </p>
+        </div>
+        <div className="space-y-2.5 p-5">
+          <Link to="/app/pricing" onClick={onClose} className="btn-primary w-full !py-3">
+            <Crown size={16} /> Go Premium — ₦3,000/mo
+          </Link>
+          <button onClick={onClose} className="w-full py-2 text-xs font-semibold text-slate-400 transition-colors hover:text-slate-600 dark:hover:text-slate-200">
+            Maybe later
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
 /* ═══════════════════ Length picker (Short/Medium/Detailed) ═══════ */
 function LengthPicker({ length, setLength }) {
   return (
@@ -309,9 +345,15 @@ function GenericTool({ tool }) {
   const { user, plan, profile } = useAuth()
   const [searchParams] = useSearchParams()
   const prefillTopic = searchParams.get('topic') || ''
-  const [values, setValues] = useState(() =>
-    Object.fromEntries((tool.fields || []).map((f) => [f.key, f.type === 'multi' ? [] : f.type === 'select' ? f.options[0] : f.key === 'topic' ? prefillTopic : '']))
-  )
+  const prefillPlatform = searchParams.get('platform') || ''
+  const initialValues = () =>
+    Object.fromEntries((tool.fields || []).map((f) => [
+      f.key,
+      f.type === 'multi'
+        ? (f.key === 'platforms' && f.options.includes(prefillPlatform) ? [prefillPlatform] : [])
+        : f.type === 'select' ? f.options[0] : f.key === 'topic' ? prefillTopic : '',
+    ]))
+  const [values, setValues] = useState(initialValues)
   const [output, setOutput] = useState(null)
   const [viral, setViral] = useState(null)
   const [calendar, setCalendar] = useState(null)
@@ -321,6 +363,7 @@ function GenericTool({ tool }) {
   const [usage, setUsage] = useState(null)
   const [mode, setMode] = useState('basic')
   const [length, setLength] = useState('medium')
+  const [showUpsell, setShowUpsell] = useState(false)
 
   // Viral & calendar produce heavy structured output → fixed Advanced cost,
   // no mode toggle. Everything else lets the user pick Basic/Advanced.
@@ -333,7 +376,7 @@ function GenericTool({ tool }) {
   const cost = isStructured ? toolCosts.advanced : toolCosts[mode]
 
   useEffect(() => {
-    setValues(Object.fromEntries((tool.fields || []).map((f) => [f.key, f.type === 'multi' ? [] : f.type === 'select' ? f.options[0] : f.key === 'topic' ? prefillTopic : ''])))
+    setValues(initialValues())
     setOutput(null); setViral(null); setCalendar(null); setError('')
   }, [tool.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -376,6 +419,11 @@ function GenericTool({ tool }) {
         setOutput(text)
       }
       await saveGeneration({ userId: user.id, tool: tool.id, title: values.topic, input: JSON.stringify(values), output: text, credits: cost })
+      // One-time upsell: a free user who just tasted Advanced quality
+      if (mode === 'advanced' && plan === 'free' && !localStorage.getItem('cf_upsell_seen')) {
+        localStorage.setItem('cf_upsell_seen', '1')
+        setShowUpsell(true)
+      }
     } catch (e) {
       setError(e.message || 'Generation failed — please try again.')
     } finally {
@@ -516,6 +564,10 @@ function GenericTool({ tool }) {
       </div>
 
       {tool.examples && <ExamplesGallery examples={tool.examples} />}
+
+      <AnimatePresence>
+        {showUpsell && <UpsellModal onClose={() => setShowUpsell(false)} />}
+      </AnimatePresence>
     </div>
   )
 }

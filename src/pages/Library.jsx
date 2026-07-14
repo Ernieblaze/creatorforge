@@ -8,7 +8,7 @@ import { CopyButton, Markdown, EmptyState, Spinner } from '../components/ui'
 import { useToast } from '../components/toast'
 
 export default function Library() {
-  const { user } = useAuth()
+  const { user, plan } = useAuth()
   const toast = useToast()
   const [items, setItems] = useState(null)
   const [filter, setFilter] = useState('all')
@@ -30,11 +30,12 @@ export default function Library() {
     })
   }
 
-  /** Download items as a single Markdown file. */
+  /** Download items as a single Markdown file (free tier gets a footer credit). */
   function exportItems(list, filename = 'creatorforge-export.md') {
     const md = list
       .map((g) => `# ${g.title || 'Untitled'}\n_${(getTool(g.tool) || TOOLS[0]).name} · ${new Date(g.created_at).toLocaleString()}_\n\n${g.output}\n\n---\n`)
       .join('\n')
+      + (plan === 'free' ? '\n\n> ⚡ Made with CreatorForge — https://creatorforge-sage.vercel.app\n' : '')
     const blob = new Blob([md], { type: 'text/markdown' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
