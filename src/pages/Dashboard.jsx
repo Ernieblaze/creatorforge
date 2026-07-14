@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Flame, FileText, Gauge, ArrowRight, Lightbulb, Clock, Crown, BatteryCharging } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { getStats, getUsageToday } from '../lib/db'
+import { getStats, getUsageToday, applyPendingReferral } from '../lib/db'
 import { TOOLS, getTool } from '../lib/tools'
 import { isToolEnabled } from '../lib/adminData'
+import { useToast } from '../components/toast'
 import Onboarding from '../components/Onboarding'
 
 const QUICK_TOOLS = ['post-generator', 'yt-script', 'ad-generator', 'repurposer', 'viral-score', 'strategist']
@@ -21,7 +22,8 @@ const IDEA_POOL = [
 ]
 
 export default function Dashboard() {
-  const { user, plan, profile, loading } = useAuth()
+  const { user, plan, profile, loading, refreshProfile } = useAuth()
+  const toast = useToast()
   const [stats, setStats] = useState(null)
   const [usage, setUsage] = useState(null)
   const [onboardDone, setOnboardDone] = useState(false)
@@ -36,6 +38,17 @@ export default function Dashboard() {
     getStats(user.id).then(setStats)
     getUsageToday(user.id, plan).then(setUsage)
   }, [user, plan])
+
+  // Redeem a pending invite link (?ref=) — both sides get +5 bonus credits
+  useEffect(() => {
+    if (!user || !profile || profile.referred_by) return
+    applyPendingReferral(user.id).then((granted) => {
+      if (granted) {
+        toast('🎁 Invite bonus applied — you got +5 bonus credits!')
+        refreshProfile()
+      }
+    })
+  }, [user, profile]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="space-y-8">

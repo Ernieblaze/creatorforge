@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Check, Crown, KeyRound, User, CreditCard, Download, ExternalLink, XCircle } from 'lucide-react'
+import { Check, Crown, KeyRound, User, CreditCard, Download, ExternalLink, XCircle, Gift, Copy } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { upsertProfile, listGenerations } from '../lib/db'
 import { getAIConfig, setAIOverride } from '../lib/ai'
@@ -233,6 +233,34 @@ export default function Settings() {
         <button onClick={saveAI} className="btn-secondary mt-5">
           {savedFlash ? <><Check size={16} className="text-emerald-500" /> Saved</> : 'Save AI settings'}
         </button>
+      </Section>
+
+      <Section icon={Gift} title="Invite friends — earn credits">
+        <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+          Share your link. When a friend signs up with it, you <b>both</b> get{' '}
+          <span className="font-bold text-brand-500">+5 bonus credits</span> — they kick in
+          automatically whenever your daily credits run out.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            readOnly
+            className="input-base min-w-56 flex-1 text-xs"
+            value={`${window.location.origin}/?ref=${user?.id ?? ''}`}
+            onFocus={(e) => e.target.select()}
+          />
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(`${window.location.origin}/?ref=${user?.id ?? ''}`)
+              toast('Invite link copied — share it anywhere!')
+            }}
+            className="btn-primary !px-4 !py-2.5 text-sm"
+          >
+            <Copy size={14} /> Copy link
+          </button>
+        </div>
+        <p className="mt-3 text-xs text-slate-400">
+          Bonus credits available: <b className="text-brand-500">{profile?.bonus_credits ?? 0}</b>
+        </p>
       </Section>
 
       <Section icon={Download} title="Your data">

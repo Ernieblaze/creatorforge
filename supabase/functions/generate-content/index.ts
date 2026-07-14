@@ -169,13 +169,15 @@ Deno.serve(async (req) => {
     // ── 2. Plan + daily credit check (service role: bypasses RLS) ──
     const admin = createClient(supabaseUrl, serviceKey);
     const { data: profile } = await admin
-      .from("profiles").select("plan, premium_until").eq("id", user.id).single();
+      .from("profiles").select("plan, premium_until, bonus_credits").eq("id", user.id).single();
     let plan = profile?.plan ?? "free";
     if (plan === "premium" && profile?.premium_until && new Date(profile.premium_until) < new Date()) {
       plan = "free"; // lapsed premium
     }
 
-    const cap = plan === "premium" ? PREMIUM_DAILY_CREDITS : FREE_DAILY_CREDITS;
+    // Referral bonus credits extend the daily budget (consumed by the DB trigger)
+    const bonusCredits = profile?.bonus_credits ?? 0;
+    const cap = (plan === "premium" ? PREMIUM_DAILY_CREDITS : FREE_DAILY_CREDITS) + bonusCredits;
     const today = new Date().toISOString().slice(0, 10);
     const { data: todaysRows } = await admin
       .from("generations")

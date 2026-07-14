@@ -12,6 +12,10 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'))
 }
 
+// Referral capture: remember ?ref=<user_id> until the visitor signs up
+const refCode = new URLSearchParams(window.location.search).get('ref')
+if (refCode) localStorage.setItem('cf_ref', refCode)
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>

@@ -42,7 +42,7 @@ export default function StrategistDock() {
     const text = input.trim()
     if (!text || loading) return
     const u = await getUsageToday(user.id, plan)
-    if (!u.allowed) {
+    if (u.remaining + (profile?.bonus_credits ?? 0) < 1) {
       setMessages((m) => [...m, { role: 'user', content: text }, { role: 'assistant', content: '⚠️ You\'ve hit today\'s free limit. Upgrade to Premium for unlimited strategist access.' }])
       setInput('')
       return

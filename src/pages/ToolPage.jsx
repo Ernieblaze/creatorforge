@@ -58,8 +58,8 @@ function GenerationProgress() {
   )
 }
 
-function LimitBanner({ usage }) {
-  if (!usage || usage.remaining > 0) return null
+function LimitBanner({ usage, bonus = 0 }) {
+  if (!usage || usage.remaining + bonus > 0) return null
   return (
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm">
       <p className="flex items-center gap-2 font-medium text-amber-600 dark:text-amber-400">
@@ -374,6 +374,8 @@ function GenericTool({ tool }) {
     advanced: tool.credits?.advanced ?? CREDIT_COST.advanced,
   }
   const cost = isStructured ? toolCosts.advanced : toolCosts[mode]
+  // Referral bonus credits kick in after the daily budget is spent
+  const bonus = profile?.bonus_credits ?? 0
 
   useEffect(() => {
     setValues(initialValues())
@@ -394,7 +396,7 @@ function GenericTool({ tool }) {
     if (!canGenerate || loading) return
     const u = await getUsageToday(user.id, plan)
     setUsage(u)
-    if (u.remaining < cost) return
+    if (u.remaining + bonus < cost) return
     setLoading(true); setError(''); setOutput(null); setViral(null); setCalendar(null)
     try {
       // Structured tools keep their strict JSON system; standard tools get
@@ -436,7 +438,7 @@ function GenericTool({ tool }) {
     if (improving || !viral) return
     const u = await getUsageToday(user.id, plan)
     setUsage(u)
-    if (u.remaining < 1) return
+    if (u.remaining + bonus < 1) return
     setImproving(true)
     try {
       const rewritten = await generate({
@@ -457,7 +459,7 @@ function GenericTool({ tool }) {
   return (
     <div>
       <ToolHeader tool={tool} />
-      <LimitBanner usage={usage} />
+      <LimitBanner usage={usage} bonus={bonus} />
       {!isAIConfigured() && (
         <p className="mb-5 rounded-xl border border-brand-500/25 bg-brand-500/8 px-4 py-2.5 text-xs text-brand-600 dark:text-brand-300">
           ✨ Demo mode: showing built-in sample output. Add your Groq/OpenAI key in Settings for live AI.
@@ -504,16 +506,16 @@ function GenericTool({ tool }) {
             </div>
           ))}
           {!isStructured && <LengthPicker length={length} setLength={setLength} />}
-          {!isStructured && <ModePicker mode={mode} setMode={setMode} remaining={usage?.remaining ?? cost} costs={toolCosts} />}
+          {!isStructured && <ModePicker mode={mode} setMode={setMode} remaining={(usage?.remaining ?? cost) + bonus} costs={toolCosts} />}
 
-          <button onClick={run} disabled={!canGenerate || loading || (usage && usage.remaining < cost)} className="btn-primary w-full !py-3">
+          <button onClick={run} disabled={!canGenerate || loading || (usage && usage.remaining + bonus < cost)} className="btn-primary w-full !py-3">
             {loading ? <><Spinner size={17} /> Forging…</> : <><Sparkles size={17} /> Generate <span className="opacity-70">· {cost} cr</span></>}
           </button>
 
           {usage && (
             <p className="text-center text-xs text-slate-400">
               {plan === 'free'
-                ? <><span className={usage.remaining < cost ? 'font-bold text-amber-500' : 'font-semibold text-slate-500 dark:text-slate-300'}>{usage.remaining}</span> of {usage.limit} daily credits left</>
+                ? <><span className={usage.remaining + bonus < cost ? 'font-bold text-amber-500' : 'font-semibold text-slate-500 dark:text-slate-300'}>{usage.remaining}</span> of {usage.limit} daily credits left{bonus > 0 && <span className="text-brand-500"> · +{bonus} bonus 🎁</span>}</>
                 : <>Premium · {usage.remaining} credits left today</>}
             </p>
           )}
@@ -580,6 +582,7 @@ function ChatTool({ tool }) {
   const [loading, setLoading] = useState(false)
   const [usage, setUsage] = useState(null)
   const endRef = useRef(null)
+  const bonus = profile?.bonus_credits ?? 0
 
   // Conversation persists across devices via the chat_messages table
   useEffect(() => { if (user) loadChat(user.id, 'strategist').then(setMessages) }, [user])
@@ -591,7 +594,7 @@ function ChatTool({ tool }) {
     if (!text || loading) return
     const u = await getUsageToday(user.id, plan)
     setUsage(u)
-    if (!u.allowed) return
+    if (u.remaining + bonus < 1) return
     const next = [...messages, { role: 'user', content: text }]
     setMessages(next)
     setInput('')
@@ -621,7 +624,7 @@ function ChatTool({ tool }) {
   return (
     <div className="flex h-[calc(100vh-10rem)] flex-col lg:h-[calc(100vh-9rem)]">
       <ToolHeader tool={tool} />
-      <LimitBanner usage={usage} />
+      <LimitBanner usage={usage} bonus={bonus} />
       <div className="card flex flex-1 flex-col overflow-hidden">
         <div className="flex-1 space-y-4 overflow-y-auto p-5">
           {messages.length === 0 && (

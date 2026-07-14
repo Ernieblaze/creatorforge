@@ -87,6 +87,25 @@ function bumpLocalUsage(credits = 1) {
   localStorage.setItem(LS_USAGE, JSON.stringify({ date: todayKey(), credits: prev + credits }))
 }
 
+/* ── Referrals ───────────────────────────────────────────── */
+/**
+ * Apply a pending referral (from localStorage 'cf_ref') for the signed-in
+ * user. Server-side RPC validates everything: one referral per account,
+ * no self-referral, both sides get +5 bonus credits. Returns true when
+ * the bonus was granted.
+ */
+export async function applyPendingReferral(userId) {
+  const ref = localStorage.getItem('cf_ref')
+  if (!ref) return false
+  if (!isSupabaseConfigured || ref === userId) {
+    localStorage.removeItem('cf_ref')
+    return false
+  }
+  const { data, error } = await supabase.rpc('apply_referral', { referrer: ref })
+  localStorage.removeItem('cf_ref') // one attempt only, success or not
+  return !error && data === true
+}
+
 /* ── Content history ─────────────────────────────────────── */
 export async function saveGeneration({ userId, tool, title, input, output, credits = 1 }) {
   const row = {
