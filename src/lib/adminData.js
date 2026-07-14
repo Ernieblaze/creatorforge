@@ -80,15 +80,25 @@ export async function fetchPayments() {
       at: hoursAgo(i * 30 + 4),
     }))
   }
+  // No FK between subscriptions and profiles (both reference auth.users),
+  // so a PostgREST embed fails — fetch separately and merge.
   const { data } = await supabase
     .from('subscriptions')
-    .select('*, profiles:user_id(username, email)')
+    .select('*')
     .order('started_at', { ascending: false })
     .limit(50)
-  return (data ?? []).map((s) => ({
+  const subs = data ?? []
+  const ids = [...new Set(subs.map((s) => s.user_id))]
+  const byId = {}
+  if (ids.length) {
+    const { data: profs } = await supabase
+      .from('profiles').select('id, username, email').in('id', ids)
+    for (const p of profs ?? []) byId[p.id] = p
+  }
+  return subs.map((s) => ({
     id: s.id,
-    user: s.profiles?.username || '—',
-    email: s.profiles?.email || '—',
+    user: byId[s.user_id]?.username || byId[s.user_id]?.email?.split('@')[0] || '—',
+    email: byId[s.user_id]?.email || '—',
     amount: Math.round(s.amount_kobo / 100),
     interval: s.interval,
     status: s.status,

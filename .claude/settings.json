@@ -7,7 +7,11 @@
       "Bash(supabase --version)",
       "Bash(docker --version)",
       "Bash(npx supabase *)",
-      "Bash(curl -s -o /dev/null -w \"localhost:5175 -> HTTP %{http_code}\\\\n\" http://localhost:5175/)"
+      "Bash(curl -s -o /dev/null -w \"localhost:5175 -> HTTP %{http_code}\\\\n\" http://localhost:5175/)",
+      "Bash(curl -s https://creatorforge-sage.vercel.app/)",
+      "Bash(curl -s -o /dev/null -w \"webhook GET status: %{http_code}\\\\n\" https://lzqsdqqlpihabwarkqkl.supabase.co/functions/v1/paystack-webhook)",
+      "Bash(curl -s https://lzqsdqqlpihabwarkqkl.supabase.co/functions/v1/paystack-webhook)",
+      "Bash(curl -s https://creatorforge-sage.vercel.app/assets/index-BW_tzNJ7.js)"
     ]
   }
 }
