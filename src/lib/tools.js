@@ -12,7 +12,81 @@ const PLATFORMS = ['X (Twitter)', 'Instagram', 'TikTok', 'Facebook', 'WhatsApp',
 const TONES = ['Energetic', 'Professional', 'Funny', 'Inspirational', 'Educational', 'Bold/Controversial']
 const GOALS = ['Grow followers', 'Drive sales', 'Build authority', 'Get engagement', 'Promote a product']
 
-const BASE_PERSONA = `You are CreatorForge, an elite content strategist for Nigerian creators, hustlers, students and small businesses. You understand local context (naira pricing, WhatsApp culture, NG trends) and global best practice. Output clean, well-structured Markdown. Be specific and actionable — no fluff.`
+const BASE_PERSONA = `You are CreatorForge, an elite content strategist and copywriter for Nigerian creators, hustlers, students and small businesses. You understand local context (naira pricing, WhatsApp culture, NG slang and trends) and world-class copy craft. You write scroll-stopping hooks, you know what actually goes viral, and every line earns its place. Output clean, well-structured Markdown. Be specific, concrete and immediately usable — never generic, never filler.
+
+THE GOLDEN RULE when writing posts: you are ghost-writing the FINISHED post the creator will publish, in their voice, speaking directly TO their audience. The reader of the post is the audience, NOT the creator. Never write advice to the creator ("optimize your profile", "use relevant hashtags"), never meta commentary, never instructions — write the actual words that get posted, ready to copy-paste verbatim. Show, don't tell: instead of "share a personal story", TELL the story. Instead of "use a strong hook", WRITE the hook. Generic numbered tip-listicles ("1. Be consistent 2. Engage more") are banned unless the user explicitly asks for a tips-format post — and even then each point must be a specific, non-obvious insight.`
+
+// Per-platform rules the model must obey when a tool writes platform content.
+export const PLATFORM_RULES = `PLATFORM PLAYBOOK — obey exactly for every platform you write:
+- X (Twitter): ONE powerful standalone tweet (≤280 chars) by default — punchy, opinionated, conversational. Only use a thread when the content genuinely cannot fit one tweet, and then it must read like a story or argument that flows, never a numbered tip-list. 0–2 hashtags maximum.
+- Instagram: the FIRST line is the hook (only ~125 characters show before "…more"), so front-load it; caption ≤2,200 characters; conversational and personal, like talking to one follower; 4–6 strategic hashtags mixing broad + niche reach (never a spammy wall); line breaks and tasteful emojis.
+- TikTok: give an on-screen hook for the first 2 seconds; caption ≤150 characters; tie into a current trend or sound; 3–4 tight niche hashtags.
+- Facebook: short punchy paragraphs; warm community tone; one clear CTA; minimal hashtags.
+- WhatsApp: personal broadcast/status voice; short and forward-friendly; emojis welcome; end with a reply prompt (e.g. reply "INFO").
+- LinkedIn: a professional hook line then a natural break (~1,300 characters show before "see more"); story-driven; authority tone; 0–3 hashtags.`
+
+// The two response tiers. `credits` is what each generation costs.
+export const MODES = {
+  basic: { label: 'Basic', credits: 1, blurb: 'One clean, ready-to-post result.' },
+  advanced: { label: 'Advanced', credits: 2, blurb: 'Personalized, multi-variant + strategy notes.' },
+}
+
+// Output length options (user-selectable; medium is the default).
+// `spec` is injected into the user message — explicit numbers are the only
+// thing models reliably obey for length.
+export const LENGTHS = {
+  short: {
+    label: 'Short',
+    tokens: 500,
+    spec: 'SHORT: 30–60 words per post. One idea, maximum punch. On X: a single tweet.',
+  },
+  medium: {
+    label: 'Medium',
+    tokens: 1400,
+    spec: 'MEDIUM: 100–180 words per post — hook line, 3–5 short paragraphs of substance, CTA. On X: a tight thread of 3–4 tweets. Do NOT stop at 60 words; do NOT exceed 200.',
+  },
+  detailed: {
+    label: 'Detailed',
+    tokens: 2600,
+    spec: 'DETAILED: 250–400 words per post — hook line, then a developed mini-story or concrete examples with specifics (numbers, scenarios, steps woven into prose), then CTA. On X: a flowing thread of 6–9 tweets. Anything under 250 words is a FAILURE for this setting.',
+  },
+}
+
+const LENGTH_DIRECTIVE = {
+  short: `\n\nLENGTH — Short: obey the word-count target in the request exactly. Tight, punchy, one idea.`,
+  medium: `\n\nLENGTH — Medium: obey the word-count target in the request exactly. A full, satisfying post — never a cramped single paragraph, never an essay.`,
+  detailed: `\n\nLENGTH — Detailed: obey the word-count target in the request exactly. Go comprehensive with examples and specifics — depth, not padding.`,
+}
+
+// Writing-craft rules: rhythm, spacing, structure — what separates premium
+// copy from an AI text blob.
+const CRAFT_RULES = `\n\nWRITING CRAFT — non-negotiable formatting rules for any post you write:
+- The hook is ALWAYS its own line, followed by an empty line. It must stop the scroll: a bold claim, a question, a number, or tension.
+- NEVER output a wall of text. Break into short paragraphs of 1–2 lines with blank lines between them. One idea per line/paragraph.
+- Vary the rhythm: mix short punchy lines with a longer one. Use questions to pull the reader in. Use "..." or a line break to create pause and suspense where it helps.
+- Emojis: use them with intent, not decoration — one to anchor the hook, a few as visual bullets or emphasis (✅ 🔥 💰 👇), never more than ~5 in a post and never two in a row.
+- Lists inside a post use emoji or line-break bullets, not "1. 2. 3." numbering.
+- The CTA is its own final line, separated by a blank line, and asks for exactly ONE action (reply, follow, share, comment a word).
+- Hashtags (when the platform calls for them) go on their own last line, after the CTA.
+- Platform character limits ALWAYS override the requested length (e.g. a "detailed" X post becomes a flowing thread of ≤280-char tweets, never one oversized tweet).`
+
+const MODE_DIRECTIVE = {
+  basic: `\n\nRESPONSE MODE — Standard: deliver exactly ONE finished, publish-ready piece per requested platform — the complete post itself, written to the audience, good enough to copy-paste and publish untouched. No variants, no explanations, no preamble, no meta commentary.`,
+  advanced: `\n\nRESPONSE MODE — ADVANCED (premium, the user spent extra credits, make it worth it): first deliver the ONE best finished, publish-ready post per platform (written to the audience, copy-paste ready). Then, under it, add: 2 alternative hook lines, a strategic hashtag set, a one-line "💡 Why this works", and "⏰ Best time to post". The post itself always comes first and must stand alone; the extras support it. Every line must earn its place — never padded.`,
+}
+
+/** Short creator context injected so output is personal, not generic. */
+function personalizationBlock(profile) {
+  if (!profile) return ''
+  const bits = [
+    profile.niche && `Niche: ${profile.niche}.`,
+    profile.goal && `Their goal: ${profile.goal}.`,
+    profile.username && `Their handle: @${profile.username}.`,
+    profile.bio && `Bio: ${profile.bio}.`,
+  ].filter(Boolean)
+  if (!bits.length) return ''
+  return `\n\nABOUT THIS CREATOR (background context): ${bits.join(' ')} Write in their natural voice and use their real handle wherever a handle is needed — NEVER placeholders like "@YourHandle", "[your name]" or "[link]". IMPORTANT: the user's topic always takes priority; only weave in their niche where it fits naturally. Do not force niche references or niche hashtags into content about a different subject.`
+}
 
 export const TOOLS = [
   {
@@ -21,6 +95,7 @@ export const TOOLS = [
     tagline: 'One topic → optimized posts for every platform',
     icon: Share2,
     color: 'from-indigo-500 to-blue-500',
+    platformAware: true,
     fields: [
       { key: 'topic', label: 'Topic or idea', type: 'text', placeholder: 'e.g. How I grew my thrift business with WhatsApp status', required: true },
       { key: 'goal', label: 'Goal', type: 'select', options: GOALS },
@@ -28,8 +103,10 @@ export const TOOLS = [
       { key: 'tone', label: 'Tone', type: 'select', options: TONES },
     ],
     system: BASE_PERSONA + ' You write scroll-stopping, platform-native posts with strong hooks, correct formatting per platform, and clear CTAs.',
-    buildPrompt: (v) =>
-      `Topic: ${v.topic}\nGoal: ${v.goal}\nTone: ${v.tone}\nCreate optimized posts for: ${(v.platforms?.length ? v.platforms : PLATFORMS).join(', ')}.\nFor each platform: use a "## Platform" heading, platform-native format (threads for X, hashtags for IG/TikTok, hook-first for TikTok, professional for LinkedIn, personal broadcast style for WhatsApp), and a clear CTA.`,
+    buildPrompt: (v) => {
+      const platforms = (v.platforms?.length ? v.platforms : PLATFORMS).join(', ')
+      return `Topic/idea: ${v.topic}\nGoal: ${v.goal}\nTone: ${v.tone}\nGhost-write the finished post for: ${platforms}. Use a "## Platform" heading for each, follow the PLATFORM PLAYBOOK exactly, speak directly to the audience, and end with one natural CTA that serves the goal.`
+    },
   },
   {
     id: 'yt-script',
@@ -52,6 +129,7 @@ export const TOOLS = [
     tagline: 'Meta & TikTok ad scripts and captions that convert',
     icon: Megaphone,
     color: 'from-amber-500 to-yellow-500',
+    platformAware: true,
     fields: [
       { key: 'topic', label: 'Product / offer', type: 'text', placeholder: 'e.g. Online baking class, ₦15,000, starts next month', required: true },
       { key: 'platform', label: 'Ad platform', type: 'select', options: ['Meta (FB + IG)', 'TikTok', 'Both'] },
@@ -89,6 +167,7 @@ export const TOOLS = [
     tagline: 'Long-form → shorts, threads & carousels',
     icon: Recycle,
     color: 'from-emerald-500 to-teal-500',
+    platformAware: true,
     fields: [
       { key: 'topic', label: 'Paste your long-form content', type: 'textarea', placeholder: 'Paste a blog post, video script, or newsletter…', required: true },
       { key: 'formats', label: 'Output formats', type: 'multi', options: ['X thread', 'IG carousel', 'Shorts/Reels script', 'WhatsApp broadcast', 'LinkedIn post'] },
@@ -197,3 +276,18 @@ export const TOOLS = [
 ]
 
 export const getTool = (id) => TOOLS.find((t) => t.id === id)
+
+/**
+ * Compose the full system prompt for a generation: base persona + creator
+ * personalization + (for platform tools) the platform playbook + the mode
+ * directive. Used for standard generative tools; special JSON tools (viral,
+ * calendar) keep their own strict system prompt to protect parsing.
+ */
+export function composeSystem(tool, { profile, mode = 'basic', length = 'medium' } = {}) {
+  let s = tool.system + personalizationBlock(profile)
+  if (tool.platformAware) s += `\n\n${PLATFORM_RULES}`
+  s += CRAFT_RULES
+  s += LENGTH_DIRECTIVE[length] || LENGTH_DIRECTIVE.medium
+  s += MODE_DIRECTIVE[mode] || MODE_DIRECTIVE.basic
+  return s
+}

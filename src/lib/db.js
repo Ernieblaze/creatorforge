@@ -10,11 +10,16 @@ const LS_CONTENT = 'cf_content'
 const LS_PROFILE = 'cf_profile'
 const LS_USAGE = 'cf_daily_usage'
 
-export const FREE_DAILY_LIMIT = 10
+// Daily credit budgets. Basic generation = 1 credit, Advanced = 2.
+export const CREDIT_COST = { basic: 1, advanced: 2 }
+export const FREE_DAILY_CREDITS = 4
+export const PREMIUM_DAILY_CREDITS = 50 // "unlimited" fair-use safety cap
 export const PLANS = {
-  free: { name: 'Free', dailyLimit: FREE_DAILY_LIMIT, price: 0 },
-  premium: { name: 'Premium', dailyLimit: Infinity, price: 3000 },
+  free: { name: 'Free', dailyCredits: FREE_DAILY_CREDITS, price: 0 },
+  premium: { name: 'Premium', dailyCredits: PREMIUM_DAILY_CREDITS, price: 3000 },
 }
+// Back-compat alias (some UI still reads a flat number)
+export const FREE_DAILY_LIMIT = FREE_DAILY_CREDITS
 
 /* ── Profile ─────────────────────────────────────────────── */
 export async function getProfile(userId) {
@@ -44,46 +49,66 @@ export async function upsertProfile(userId, patch) {
 /* ── Freemium limits ─────────────────────────────────────── */
 const todayKey = () => new Date().toISOString().slice(0, 10)
 
-/** Returns { used, limit, remaining, allowed } for today. */
+/**
+ * Returns today's credit usage: { used, limit, remaining, allowed }.
+ * Sums the `credits` column; if that column isn't migrated yet it falls
+ * back to counting rows (each = 1 credit) so nothing breaks mid-upgrade.
+ */
 export async function getUsageToday(userId, plan = 'free') {
-  const limit = PLANS[plan]?.dailyLimit ?? FREE_DAILY_LIMIT
+  const limit = PLANS[plan]?.dailyCredits ?? FREE_DAILY_CREDITS
   let used = 0
   if (isSupabaseConfigured) {
-    const { count } = await supabase
+    const { data, error } = await supabase
       .from('generations')
-      .select('id', { count: 'exact', head: true })
+      .select('credits')
       .eq('user_id', userId)
       .gte('created_at', `${todayKey()}T00:00:00Z`)
-    used = count ?? 0
+    if (error) {
+      // `credits` column not present yet — fall back to a row count
+      const { count } = await supabase
+        .from('generations')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .gte('created_at', `${todayKey()}T00:00:00Z`)
+      used = count ?? 0
+    } else {
+      used = (data ?? []).reduce((s, r) => s + (r.credits ?? 1), 0)
+    }
   } else {
     const u = JSON.parse(localStorage.getItem(LS_USAGE) || '{}')
-    used = u.date === todayKey() ? u.count : 0
+    used = u.date === todayKey() ? u.credits : 0
   }
   return { used, limit, remaining: Math.max(0, limit - used), allowed: used < limit }
 }
 
-function bumpLocalUsage() {
+function bumpLocalUsage(credits = 1) {
   const u = JSON.parse(localStorage.getItem(LS_USAGE) || '{}')
-  const next = u.date === todayKey() ? { date: u.date, count: u.count + 1 } : { date: todayKey(), count: 1 }
-  localStorage.setItem(LS_USAGE, JSON.stringify(next))
+  const prev = u.date === todayKey() ? u.credits : 0
+  localStorage.setItem(LS_USAGE, JSON.stringify({ date: todayKey(), credits: prev + credits }))
 }
 
 /* ── Content history ─────────────────────────────────────── */
-export async function saveGeneration({ userId, tool, title, input, output }) {
+export async function saveGeneration({ userId, tool, title, input, output, credits = 1 }) {
   const row = {
     user_id: userId,
     tool,
     title: (title || input || '').slice(0, 120),
     input,
     output,
+    credits,
     created_at: new Date().toISOString(),
   }
   if (isSupabaseConfigured) {
-    const { data, error } = await supabase.from('generations').insert(row).select().single()
-    if (error) throw error
-    return data
+    let res = await supabase.from('generations').insert(row).select().single()
+    // If the `credits` column isn't migrated yet, retry without it
+    if (res.error && /credits/i.test(res.error.message || '')) {
+      const { credits: _drop, ...noCredits } = row
+      res = await supabase.from('generations').insert(noCredits).select().single()
+    }
+    if (res.error) throw res.error
+    return res.data
   }
-  bumpLocalUsage()
+  bumpLocalUsage(credits)
   const list = JSON.parse(localStorage.getItem(LS_CONTENT) || '[]')
   const withId = { id: crypto.randomUUID(), ...row }
   list.unshift(withId)

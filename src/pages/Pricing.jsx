@@ -113,7 +113,8 @@ export default function Pricing() {
           </thead>
           <tbody>
             {[
-              ['Daily generations', '10', 'Unlimited'],
+              ['Daily credits', '4 / day', 'Unlimited'],
+              ['Advanced (premium-quality) mode', 'Limited', 'Unlimited'],
               ['All 13 AI tools', true, true],
               ['Content library & search', true, true],
               ['Viral Score + "Improve again"', true, true],

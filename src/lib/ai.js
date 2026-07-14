@@ -73,9 +73,9 @@ function logUsage({ provider, model, inputTokens, outputTokens, tool }) {
 export const getUsageLog = () => JSON.parse(localStorage.getItem('cf_usage_log') || '[]')
 
 /* ── Edge function path (production) ─────────────────────── */
-async function generateViaEdge({ system, messages, tool, maxTokens }) {
+async function generateViaEdge({ system, messages, tool, maxTokens, mode }) {
   const { data, error } = await supabase.functions.invoke('generate-content', {
-    body: { tool, system, messages, maxTokens },
+    body: { tool, system, messages, maxTokens, mode },
   })
   if (error) {
     // FunctionsHttpError carries the response — surface the server's message
@@ -109,14 +109,16 @@ async function generateViaEdge({ system, messages, tool, maxTokens }) {
  * @param {string} [opts.tool]  Tool id for usage logging
  * @returns {Promise<string>} assistant text
  */
-export async function generate({ system, messages, tool = 'unknown', maxTokens = 2048 }) {
+export async function generate({ system, messages, tool = 'unknown', maxTokens, mode = 'basic' }) {
   const { provider, apiKey, model, meta } = getAIConfig()
   const hasOverride = Boolean(localStorage.getItem('cf_ai_override')) && apiKey
+  // Advanced generations get a bigger budget for richer, longer output
+  const tokens = maxTokens ?? (mode === 'advanced' ? 2800 : 1200)
 
   // Production path: server-side key via the edge function (unless the
   // user brought their own key in Settings, which takes precedence)
   if (isSupabaseConfigured && !hasOverride) {
-    return generateViaEdge({ system, messages, tool, maxTokens })
+    return generateViaEdge({ system, messages, tool, maxTokens: tokens, mode })
   }
 
   // No key → rich built-in demo content so the product is explorable
@@ -134,7 +136,7 @@ export async function generate({ system, messages, tool = 'unknown', maxTokens =
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true',
       },
-      body: JSON.stringify({ model, max_tokens: maxTokens, system, messages }),
+      body: JSON.stringify({ model, max_tokens: tokens, system, messages }),
     })
     if (!res.ok) throw new Error(`AI error ${res.status}: ${(await res.text()).slice(0, 200)}`)
     const data = await res.json()
@@ -152,7 +154,7 @@ export async function generate({ system, messages, tool = 'unknown', maxTokens =
     headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
       model,
-      max_tokens: maxTokens,
+      max_tokens: tokens,
       messages: [{ role: 'system', content: system }, ...messages],
     }),
   })

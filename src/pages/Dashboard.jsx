@@ -51,7 +51,7 @@ export default function Dashboard() {
         </div>
         {usage && plan === 'free' && (
           <span className="rounded-full border border-slate-200 px-3.5 py-1.5 text-xs font-semibold text-slate-500 dark:border-ink-600 dark:text-slate-400">
-            {usage.remaining} / {usage.limit} free generations left today
+            {usage.remaining} / {usage.limit} daily credits left
           </span>
         )}
         {plan === 'premium' && (
@@ -69,7 +69,7 @@ export default function Dashboard() {
           { icon: FileText, label: 'Content generated', value: stats ? stats.total : '—', color: 'text-brand-500 bg-brand-500/10' },
           { icon: Flame, label: 'Day streak', value: stats ? `${stats.streak} 🔥` : '—', color: 'text-orange-500 bg-orange-500/10' },
           { icon: Gauge, label: 'Tools used', value: stats ? Object.keys(stats.byTool).length : '—', color: 'text-emerald-500 bg-emerald-500/10' },
-          { icon: BatteryCharging, label: plan === 'free' ? 'Generations left today' : 'Generations today', value: usage ? (plan === 'free' ? usage.remaining : usage.used) : '—', color: 'text-accent-500 bg-accent-500/10' },
+          { icon: BatteryCharging, label: plan === 'free' ? 'Credits left today' : 'Credits used today', value: usage ? (plan === 'free' ? usage.remaining : usage.used) : '—', color: 'text-accent-500 bg-accent-500/10' },
         ].map((s, i) => (
           <motion.div
             key={s.label}

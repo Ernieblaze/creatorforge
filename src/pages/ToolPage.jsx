@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, Link, Navigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Send, AlertTriangle, Crown, BookMarked, Wand2, GripVertical, Eye } from 'lucide-react'
-import { getTool } from '../lib/tools'
+import { getTool, composeSystem, MODES, LENGTHS } from '../lib/tools'
 import { generate, isAIConfigured } from '../lib/ai'
 import { useAuth } from '../context/AuthContext'
-import { getUsageToday, saveGeneration, listGenerations, loadChat, saveChatMessage } from '../lib/db'
+import { getUsageToday, saveGeneration, listGenerations, loadChat, saveChatMessage, CREDIT_COST } from '../lib/db'
 import { isToolEnabled } from '../lib/adminData'
 import { Spinner, CopyButton, Markdown, EmptyState, DemoModal } from '../components/ui'
 
@@ -59,15 +59,77 @@ function GenerationProgress() {
 }
 
 function LimitBanner({ usage }) {
-  if (!usage || usage.allowed) return null
+  if (!usage || usage.remaining > 0) return null
   return (
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm">
       <p className="flex items-center gap-2 font-medium text-amber-600 dark:text-amber-400">
-        <AlertTriangle size={16} /> You've used all {usage.limit} free generations today.
+        <AlertTriangle size={16} /> You've used all {usage.limit} daily credits. They reset tomorrow.
       </p>
       <Link to="/app/pricing" className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-brand-600 to-accent-600 px-3.5 py-1.5 text-xs font-bold text-white">
         <Crown size={13} /> Go unlimited
       </Link>
+    </div>
+  )
+}
+
+/* ═══════════════════ Length picker (Short/Medium/Detailed) ═══════ */
+function LengthPicker({ length, setLength }) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Length</label>
+      <div className="grid grid-cols-3 gap-2">
+        {Object.entries(LENGTHS).map(([key, l]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setLength(key)}
+            className={`rounded-xl border px-2 py-2 text-xs font-bold transition-all ${
+              length === key
+                ? 'border-brand-500 bg-brand-500/10 text-brand-600 dark:text-brand-300'
+                : 'border-slate-300 text-slate-500 hover:border-brand-400 dark:border-ink-600 dark:text-slate-400'
+            }`}
+          >
+            {l.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ═══════════════════ Basic / Advanced mode picker ═══════ */
+function ModePicker({ mode, setMode, remaining }) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Response quality</label>
+      <div className="grid grid-cols-2 gap-2">
+        {['basic', 'advanced'].map((m) => {
+          const active = mode === m
+          const tooPricey = MODES[m].credits > remaining
+          return (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              className={`rounded-xl border p-3 text-left transition-all ${
+                active
+                  ? 'border-brand-500 bg-brand-500/10 ring-1 ring-brand-500/30'
+                  : 'border-slate-300 hover:border-brand-400 dark:border-ink-600'
+              }`}
+            >
+              <span className="flex items-center justify-between">
+                <span className={`text-sm font-bold ${active ? 'text-brand-600 dark:text-brand-300' : 'text-slate-700 dark:text-slate-200'}`}>
+                  {m === 'advanced' && '✨ '}{MODES[m].label}
+                </span>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${tooPricey ? 'bg-slate-200 text-slate-400 dark:bg-ink-700' : 'bg-brand-500/15 text-brand-600 dark:text-brand-300'}`}>
+                  {MODES[m].credits} cr
+                </span>
+              </span>
+              <span className="mt-0.5 block text-[11px] leading-snug text-slate-400">{MODES[m].blurb}</span>
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -243,7 +305,7 @@ function ExamplesGallery({ examples }) {
 
 /* ═══════════════════ Generic generator tool ═════════════ */
 function GenericTool({ tool }) {
-  const { user, plan } = useAuth()
+  const { user, plan, profile } = useAuth()
   const [searchParams] = useSearchParams()
   const prefillTopic = searchParams.get('topic') || ''
   const [values, setValues] = useState(() =>
@@ -256,6 +318,13 @@ function GenericTool({ tool }) {
   const [improving, setImproving] = useState(false)
   const [error, setError] = useState('')
   const [usage, setUsage] = useState(null)
+  const [mode, setMode] = useState('basic')
+  const [length, setLength] = useState('medium')
+
+  // Viral & calendar produce heavy structured output → fixed Advanced cost,
+  // no mode toggle. Everything else lets the user pick Basic/Advanced.
+  const isStructured = tool.special === 'viral' || tool.special === 'calendar'
+  const cost = isStructured ? CREDIT_COST.advanced : CREDIT_COST[mode]
 
   useEffect(() => {
     setValues(Object.fromEntries((tool.fields || []).map((f) => [f.key, f.type === 'multi' ? [] : f.type === 'select' ? f.options[0] : f.key === 'topic' ? prefillTopic : ''])))
@@ -276,13 +345,21 @@ function GenericTool({ tool }) {
     if (!canGenerate || loading) return
     const u = await getUsageToday(user.id, plan)
     setUsage(u)
-    if (!u.allowed) return
+    if (u.remaining < cost) return
     setLoading(true); setError(''); setOutput(null); setViral(null); setCalendar(null)
     try {
+      // Structured tools keep their strict JSON system; standard tools get
+      // the personalized, mode-aware premium system prompt.
+      const system = isStructured ? tool.system : composeSystem(tool, { profile, mode, length })
+      const userMsg = isStructured
+        ? tool.buildPrompt(values, { mode, profile })
+        : `${tool.buildPrompt(values, { mode, profile })}\n\nLENGTH REQUIREMENT (strict): ${LENGTHS[length].spec}`
       const text = await generate({
-        system: tool.system,
-        messages: [{ role: 'user', content: tool.buildPrompt(values) }],
+        system,
+        messages: [{ role: 'user', content: userMsg }],
         tool: tool.id,
+        mode: isStructured ? 'advanced' : mode,
+        maxTokens: isStructured ? undefined : LENGTHS[length].tokens + (mode === 'advanced' ? 900 : 0),
       })
       const stripFences = (s) => s.replace(/^```(json)?|```$/gm, '').trim()
       if (tool.special === 'viral') {
@@ -292,7 +369,7 @@ function GenericTool({ tool }) {
       } else {
         setOutput(text)
       }
-      await saveGeneration({ userId: user.id, tool: tool.id, title: values.topic, input: JSON.stringify(values), output: text })
+      await saveGeneration({ userId: user.id, tool: tool.id, title: values.topic, input: JSON.stringify(values), output: text, credits: cost })
     } catch (e) {
       setError(e.message || 'Generation failed — please try again.')
     } finally {
@@ -305,7 +382,7 @@ function GenericTool({ tool }) {
     if (improving || !viral) return
     const u = await getUsageToday(user.id, plan)
     setUsage(u)
-    if (!u.allowed) return
+    if (u.remaining < 1) return
     setImproving(true)
     try {
       const rewritten = await generate({
@@ -315,7 +392,7 @@ function GenericTool({ tool }) {
       })
       const next = { ...viral, rewritten: rewritten.trim() }
       setViral(next)
-      await saveGeneration({ userId: user.id, tool: tool.id, title: `Improved: ${values.topic}`, input: viral.rewritten, output: rewritten })
+      await saveGeneration({ userId: user.id, tool: tool.id, title: `Improved: ${values.topic}`, input: viral.rewritten, output: rewritten, credits: 1 })
     } catch (e) {
       setError(e.message)
     } finally {
@@ -372,9 +449,20 @@ function GenericTool({ tool }) {
               )}
             </div>
           ))}
-          <button onClick={run} disabled={!canGenerate || loading || (usage && !usage.allowed)} className="btn-primary w-full !py-3">
-            {loading ? <><Spinner size={17} /> Forging…</> : <><Sparkles size={17} /> Generate</>}
+          {!isStructured && <LengthPicker length={length} setLength={setLength} />}
+          {!isStructured && <ModePicker mode={mode} setMode={setMode} remaining={usage?.remaining ?? cost} />}
+
+          <button onClick={run} disabled={!canGenerate || loading || (usage && usage.remaining < cost)} className="btn-primary w-full !py-3">
+            {loading ? <><Spinner size={17} /> Forging…</> : <><Sparkles size={17} /> Generate <span className="opacity-70">· {cost} cr</span></>}
           </button>
+
+          {usage && (
+            <p className="text-center text-xs text-slate-400">
+              {plan === 'free'
+                ? <><span className={usage.remaining < cost ? 'font-bold text-amber-500' : 'font-semibold text-slate-500 dark:text-slate-300'}>{usage.remaining}</span> of {usage.limit} daily credits left</>
+                : <>Premium · {usage.remaining} credits left today</>}
+            </p>
+          )}
         </div>
 
         {/* Output */}
