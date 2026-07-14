@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext'
 import { getUsageToday, saveGeneration, listGenerations, loadChat, saveChatMessage, CREDIT_COST } from '../lib/db'
 import { isToolEnabled } from '../lib/adminData'
 import { Spinner, CopyButton, Markdown, EmptyState, DemoModal } from '../components/ui'
+import BioLinkBuilder from '../components/BioLinkBuilder'
 
 /* ═══════════════════ Shared: tool header ════════════════ */
 function ToolHeader({ tool }) {
@@ -21,7 +22,7 @@ function ToolHeader({ tool }) {
         <h1 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl dark:text-white">{tool.name}</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400">{tool.tagline}</p>
       </div>
-      {tool.special !== 'chat' && tool.special !== 'library' && (
+      {tool.special !== 'chat' && tool.special !== 'library' && tool.special !== 'biolink' && (
         <button onClick={() => setShowDemo(true)} className="btn-secondary shrink-0 !px-3.5 !py-2 text-xs">
           <Eye size={14} /> Example
         </button>
@@ -551,6 +552,15 @@ function GenericTool({ tool }) {
                   <CopyButton text={output} />
                 </div>
                 <Markdown text={output} />
+                {tool.followups && (
+                  <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-4 dark:border-ink-700">
+                    {tool.followups.map((f) => (
+                      <Link key={f.label} to={f.to(values)} className="btn-secondary !px-3.5 !py-2 text-xs">
+                        {f.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </motion.div>
             )}
             {!loading && !output && !viral && !calendar && !error && (
@@ -736,5 +746,13 @@ export default function ToolPage() {
   if (!tool || !isToolEnabled(id)) return <Navigate to="/app" replace />
   if (tool.special === 'chat') return <ChatTool tool={tool} key={id} />
   if (tool.special === 'library') return <TemplatesTool tool={tool} key={id} />
+  if (tool.special === 'biolink') {
+    return (
+      <div key={id}>
+        <ToolHeader tool={tool} />
+        <BioLinkBuilder />
+      </div>
+    )
+  }
   return <GenericTool tool={tool} key={id} />
 }

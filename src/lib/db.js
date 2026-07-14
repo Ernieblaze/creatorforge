@@ -106,6 +106,57 @@ export async function applyPendingReferral(userId) {
   return !error && data === true
 }
 
+/* ── Link-in-Bio pages ───────────────────────────────────── */
+const LS_BIO = 'cf_bio_page'
+
+/** Public fetch by slug — powers /u/:username for visitors (no login). */
+export async function getBioPage(slug) {
+  if (isSupabaseConfigured) {
+    const { data } = await supabase
+      .from('bio_pages').select('*').eq('slug', slug.toLowerCase()).maybeSingle()
+    return data
+  }
+  const local = JSON.parse(localStorage.getItem(LS_BIO) || 'null')
+  return local?.slug === slug.toLowerCase() ? local : null
+}
+
+/** The signed-in user's own bio page (or null). */
+export async function getMyBioPage(userId) {
+  if (isSupabaseConfigured) {
+    const { data } = await supabase
+      .from('bio_pages').select('*').eq('user_id', userId).maybeSingle()
+    return data
+  }
+  return JSON.parse(localStorage.getItem(LS_BIO) || 'null')
+}
+
+/** Create/update the user's bio page. Throws 'SLUG_TAKEN' on collisions. */
+export async function saveBioPage(userId, page) {
+  const row = {
+    user_id: userId,
+    slug: (page.slug || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 30),
+    name: page.name || '',
+    bio: page.bio || '',
+    avatar_url: page.avatar_url || '',
+    links: page.links || [],
+    socials: page.socials || {},
+    theme: page.theme || 'dark',
+    updated_at: new Date().toISOString(),
+  }
+  if (!row.slug) throw new Error('Pick a username for your page link first.')
+  if (isSupabaseConfigured) {
+    const { data, error } = await supabase
+      .from('bio_pages').upsert(row, { onConflict: 'user_id' }).select().single()
+    if (error) {
+      if (/duplicate|unique/i.test(error.message)) throw new Error('That username is taken — try another.')
+      throw error
+    }
+    return data
+  }
+  localStorage.setItem(LS_BIO, JSON.stringify(row))
+  return row
+}
+
 /* ── Content history ─────────────────────────────────────── */
 export async function saveGeneration({ userId, tool, title, input, output, credits = 1 }) {
   const row = {

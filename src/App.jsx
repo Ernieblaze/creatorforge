@@ -25,6 +25,9 @@ const AdminFlags = lazy(() => import('./pages/admin/FlagsSection'))
 const AdminAnnouncements = lazy(() => import('./pages/admin/AnnouncementsSection'))
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'))
 
+// Public link-in-bio pages (/u/:slug) — no auth required
+const BioPage = lazy(() => import('./pages/BioPage'))
+
 const FullScreenLoader = (
   <div className="grid min-h-screen place-items-center dark:bg-ink-900">
     <Spinner size={28} className="text-brand-500" />
@@ -43,6 +46,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/u/:slug" element={<BioPage />} />
         <Route
           path="/app"
           element={

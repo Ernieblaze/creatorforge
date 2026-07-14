@@ -6,6 +6,7 @@
 import {
   Share2, Clapperboard, Megaphone, Palette, Recycle, Gauge, CalendarDays,
   Lightbulb, Crosshair, MessagesSquare, Coins, BookMarked, Sparkles,
+  Link2, Radar, Image,
 } from 'lucide-react'
 
 const PLATFORMS = ['X (Twitter)', 'Instagram', 'TikTok', 'Facebook', 'WhatsApp', 'LinkedIn']
@@ -168,6 +169,24 @@ Always include [VISUAL] / [ON-SCREEN TEXT] / [B-ROLL] cues alongside the spoken 
     ],
   },
   {
+    id: 'image-prompts',
+    name: 'Image Prompt Generator',
+    tagline: '3 pro prompts for Midjourney, Flux & DALL-E',
+    icon: Image,
+    color: 'from-cyan-500 to-blue-400',
+    fields: [
+      { key: 'topic', label: 'Describe the image you want', type: 'textarea', placeholder: 'e.g. A young Nigerian entrepreneur working on a laptop in a bright modern café', required: true },
+      { key: 'style', label: 'Style', type: 'select', options: ['Realistic photo', 'Cinematic', 'Illustration/flat', '3D render', 'Luxury/editorial', 'Vibrant pop', 'Minimal/clean'] },
+      { key: 'mood', label: 'Mood', type: 'select', options: ['Energetic', 'Calm/premium', 'Dramatic', 'Warm/friendly', 'Dark/moody', 'Bright/optimistic'] },
+      { key: 'use', label: 'Where will it be used?', type: 'select', options: ['YouTube thumbnail (16:9)', 'Social post (1:1)', 'Story/Reel cover (9:16)', 'Carousel slide (4:5)', 'Website banner (21:9)'] },
+    ],
+    system: BASE_PERSONA + ` You are an expert image-prompt engineer for Midjourney, Flux and DALL-E. You know each engine's strengths and syntax: Midjourney loves comma-separated visual descriptors + --ar and --style flags; Flux responds to rich natural-language scene descriptions; DALL-E wants clear, complete sentences. Every prompt you write specifies: subject with specific details, environment, lighting, camera/lens or art style, color palette, composition, and the correct aspect ratio for the stated use.`,
+    buildPrompt: (v) => {
+      const ar = v.use?.match(/\(([^)]+)\)/)?.[1] ?? '1:1'
+      return `Image idea: ${v.topic}\nStyle: ${v.style}\nMood: ${v.mood}\nUse case: ${v.use} — aspect ratio ${ar}\nWrite exactly 3 detailed prompts, one per engine, using these headings: "## Midjourney" (end the prompt with --ar ${ar.replace(':', ':')}), "## Flux", "## DALL-E". Each prompt must be a single copy-paste-ready block with no commentary around it.`
+    },
+  },
+  {
     id: 'repurposer',
     name: 'Repurposing Engine',
     tagline: 'Long-form → shorts, threads & carousels',
@@ -225,6 +244,23 @@ Always include [VISUAL] / [ON-SCREEN TEXT] / [B-ROLL] cues alongside the spoken 
     buildPrompt: (v) => `Niche: ${v.topic}\nGive: 4 trending formats working now (with why), 10 specific content ideas, and one strategic angle to own in this niche.`,
   },
   {
+    id: 'audience-lab',
+    name: 'Audience Research Lab',
+    tagline: 'Trends, pain points & ready-to-run content ideas',
+    icon: Radar,
+    color: 'from-lime-500 to-emerald-400',
+    fields: [
+      { key: 'topic', label: 'Your niche or topic', type: 'text', placeholder: 'e.g. Thrift fashion for Lagos students', required: true },
+    ],
+    system: BASE_PERSONA + ` You are an audience researcher for the Nigerian market. You surface what this audience is talking about right now, what keeps them up at night, and exactly what content would stop their scroll. Be concrete and local — naira figures, Nigerian scenarios, platform-specific behavior.`,
+    buildPrompt: (v) =>
+      `Niche/topic: ${v.topic}\nProduce, with these headings:\n"## 🔥 Trending in Nigeria right now" — 5 current conversation topics/angles in this niche.\n"## 😩 Audience pain points" — 5 specific frustrations this audience has (written in their voice).\n"## 🎬 Ready-to-run content ideas" — 8–10 ideas as a list, each with: the format (Reel/Post/Carousel/Thread/Story), a ready hook line in quotes, and one sentence on why it will work.`,
+    followups: [
+      { label: '→ Send topic to Post Generator', to: (v) => `/app/tool/post-generator?topic=${encodeURIComponent(v.topic)}` },
+      { label: '→ Build a 30-day calendar for this niche', to: (v) => `/app/tool/calendar?topic=${encodeURIComponent(v.topic)}` },
+    ],
+  },
+  {
     id: 'competitor',
     name: 'Competitor Analyzer',
     tagline: 'Learn from top accounts, find your edge',
@@ -262,6 +298,16 @@ Always include [VISUAL] / [ON-SCREEN TEXT] / [B-ROLL] cues alongside the spoken 
     ],
     system: BASE_PERSONA + ' You design monetization playbooks ranked by speed-to-first-naira, with realistic naira pricing and a concrete this-week action. Tailor streams to the creator\'s main content format.',
     buildPrompt: (v) => `Situation: ${v.topic}\nMain content type: ${v.contentType}\nGive a ranked monetization playbook (6 streams max) tailored to this content type, with naira pricing, effort level, and one specific action to take this week.`,
+  },
+  {
+    id: 'bio-link',
+    name: 'Link-in-Bio Builder',
+    tagline: 'Your own bio page — replaces Linktree, free',
+    icon: Link2,
+    color: 'from-purple-500 to-fuchsia-500',
+    special: 'biolink',
+    // Used by the "Generate Bio & Layout" AI button inside the builder
+    system: BASE_PERSONA + ' You write magnetic short bios for creator link-in-bio pages. Respond ONLY with valid JSON, no markdown fences, matching: {"bio": string (max 140 chars, punchy, first person, may include 1-2 emojis), "link_titles": [4 strings — compelling button labels this creator should offer, e.g. "🔥 My free caption guide"]}.',
   },
   {
     id: 'templates',

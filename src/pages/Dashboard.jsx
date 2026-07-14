@@ -9,7 +9,7 @@ import { isToolEnabled } from '../lib/adminData'
 import { useToast } from '../components/toast'
 import Onboarding from '../components/Onboarding'
 
-const QUICK_TOOLS = ['post-generator', 'yt-script', 'ad-generator', 'repurposer', 'viral-score', 'strategist']
+const QUICK_TOOLS = ['post-generator', 'yt-script', 'bio-link', 'audience-lab', 'image-prompts', 'repurposer', 'viral-score', 'ad-generator', 'strategist']
 
 /** Rotating daily idea suggestions — clicking one pre-fills the tool via ?topic=. */
 const IDEA_POOL = [
