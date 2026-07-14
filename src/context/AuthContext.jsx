@@ -70,6 +70,8 @@ export function AuthProvider({ children }) {
 
   // Effective plan: a premium whose premium_until has lapsed (e.g. after
   // cancellation) is treated as free — mirrors the server-side trigger.
+  // Admins are ALWAYS premium: it's their own product.
+  const isAdmin = isAdminEmail(user?.email) || (!isSupabaseConfigured && Boolean(user))
   const rawPlan = profile?.plan || 'free'
   const lapsed =
     rawPlan === 'premium' &&
@@ -80,8 +82,8 @@ export function AuthProvider({ children }) {
     user,
     profile,
     loading,
-    isAdmin: isAdminEmail(user?.email) || (!isSupabaseConfigured && Boolean(user)),
-    plan: lapsed ? 'free' : rawPlan,
+    isAdmin,
+    plan: isAdmin ? 'premium' : lapsed ? 'free' : rawPlan,
     signInWithGoogle,
     signOut,
     refreshProfile,
