@@ -403,7 +403,7 @@ function GenericTool({ tool }) {
       // Structured tools keep their strict JSON system; standard tools get
       // the personalized, mode-aware premium system prompt.
       const system = isStructured ? tool.system : composeSystem(tool, { profile, mode, length })
-      const userMsg = isStructured
+      const userMsg = isStructured || tool.noLength
         ? tool.buildPrompt(values, { mode, profile })
         : `${tool.buildPrompt(values, { mode, profile })}\n\nLENGTH REQUIREMENT (strict): ${LENGTHS[length].spec}`
       const text = await generate({
@@ -506,7 +506,7 @@ function GenericTool({ tool }) {
               )}
             </div>
           ))}
-          {!isStructured && <LengthPicker length={length} setLength={setLength} />}
+          {!isStructured && !tool.noLength && <LengthPicker length={length} setLength={setLength} />}
           {!isStructured && <ModePicker mode={mode} setMode={setMode} remaining={(usage?.remaining ?? cost) + bonus} costs={toolCosts} />}
 
           <button onClick={run} disabled={!canGenerate || loading || (usage && usage.remaining + bonus < cost)} className="btn-primary w-full !py-3">

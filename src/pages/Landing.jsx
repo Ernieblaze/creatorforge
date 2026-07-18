@@ -142,7 +142,7 @@ const TESTIMONIALS = [
 ]
 
 const FAQ_STATS = [
-  { n: '13+', l: 'AI tools in one place' },
+  { n: '17', l: 'AI tools in one place' },
   { n: '6', l: 'platforms optimized' },
   { n: '30s', l: 'from idea to post' },
   { n: '₦0', l: 'to start today' },
@@ -206,7 +206,7 @@ export default function Landing() {
               The Complete <span className="text-gradient">Operating System</span> for Content Creators & Hustlers
             </motion.h1>
             <motion.p {...fadeUp} transition={{ ...fadeUp.transition, delay: 0.12 }} className="mt-5 max-w-xl text-lg leading-relaxed text-slate-600 dark:text-slate-400">
-              Posts, scripts, ads, calendars, viral scores and strategy — 13 AI tools in one clean workspace. Stop juggling apps. Start compounding.
+              Posts, scripts, ads, calendars, viral scores and strategy — 17 AI tools in one clean workspace. Stop juggling apps. Start compounding.
             </motion.p>
             <motion.div {...fadeUp} transition={{ ...fadeUp.transition, delay: 0.2 }} className="mt-8 flex flex-wrap items-center gap-4">
               <Link to={cta} className="btn-primary !px-7 !py-3.5 text-base">
@@ -323,7 +323,7 @@ export default function Landing() {
             <p className="font-bold text-slate-900 dark:text-white">Free</p>
             <p className="mt-3 text-4xl font-extrabold text-slate-900 dark:text-white">₦0<span className="text-base font-medium text-slate-400">/forever</span></p>
             <ul className="mt-6 space-y-3 text-sm text-slate-600 dark:text-slate-300">
-              {['10 generations per day', 'All 13 tools (basic)', 'Content library', 'Community support'].map((f) => (
+              {['10 generations per day', 'All 17 tools (basic)', 'Content library', 'Community support'].map((f) => (
                 <li key={f} className="flex items-center gap-2.5"><Check size={16} className="text-emerald-500" /> {f}</li>
               ))}
             </ul>

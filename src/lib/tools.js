@@ -6,7 +6,7 @@
 import {
   Share2, Clapperboard, Megaphone, Palette, Recycle, Gauge, CalendarDays,
   Lightbulb, Crosshair, MessagesSquare, Coins, BookMarked, Sparkles,
-  Link2, Radar, Image,
+  Link2, Radar, Image, MessageCircleReply,
 } from 'lucide-react'
 
 const PLATFORMS = ['X (Twitter)', 'Instagram', 'TikTok', 'Facebook', 'WhatsApp', 'LinkedIn']
@@ -287,6 +287,38 @@ Always include [VISUAL] / [ON-SCREEN TEXT] / [B-ROLL] cues alongside the spoken 
     buildPrompt: (v) => `${v.link ? `Post link: ${v.link}\n` : ''}Context: ${v.topic}\nProvide paste-ready replies/comments/DMs appropriate to this context, with brief notes on when to use each.`,
   },
   {
+    id: 'dm-reply',
+    name: 'DM Reply Assistant',
+    tagline: 'Paste any message, get the perfect reply',
+    icon: MessageCircleReply,
+    color: 'from-teal-500 to-green-500',
+    noCraft: true,   // post-formatting rules (hashtags, CTAs) don't apply to DM replies
+    noLength: true,  // reply length is set by the sender's message, not a word-count picker
+    modeDirectives: {
+      basic: `\n\nRESPONSE MODE — Standard: output exactly two sections. "## 🔎 What they really mean" — ONE short line on the sender's real intent/mood. "## 💬 Your reply" — ONE ready-to-send reply, nothing else. No commentary, no options.`,
+      advanced: `\n\nRESPONSE MODE — ADVANCED (premium, the user spent extra credits): output these sections. "## 🔎 What they really mean" — one sharp line on the sender's real intent/mood. "## 💬 Your reply" — the single best ready-to-send reply. "## 🕊️ Softer version" — a gentler alternative. "## 🔥 Bolder version" — a more confident/daring alternative. "## 💡 Tip" — one line on timing or what to do if they reply badly. Each reply must be complete and sendable on its own.`,
+    },
+    fields: [
+      { key: 'topic', label: 'Paste the message you received', type: 'textarea', placeholder: 'Paste the exact WhatsApp/DM message here…', required: true },
+      { key: 'voice', label: 'You are replying as', type: 'select', options: ['Prefer not to say', 'Male', 'Female'] },
+      { key: 'context', label: 'What is this about?', type: 'select', options: ['💼 Business / Customer', '❤️ Relationship / Dating', '👥 Friends & Personal life', '🏢 Professional / Work'] },
+      { key: 'platform', label: 'Where are you replying?', type: 'select', options: ['WhatsApp', 'Instagram DM', 'X (Twitter) DM', 'Facebook Messenger', 'SMS'] },
+      { key: 'tone', label: 'How do you want to sound?', type: 'select', options: ['Warm & friendly', 'Professional', 'Flirty & playful', 'Firm but polite', 'Apologetic', 'Funny', 'Short & dry'] },
+      { key: 'goal', label: 'What should the reply achieve? (optional)', type: 'text', placeholder: 'e.g. close the sale, politely say no, keep the chat going, calm them down' },
+      { key: 'extra', label: 'Extra context (optional)', type: 'text', placeholder: 'e.g. she is a repeat customer / we argued yesterday' },
+    ],
+    system: BASE_PERSONA + ` You are a message-reply expert. Your job: study the message the user received — its mood, intent, subtext, and what the sender actually wants — then write the exact reply the user will send, in the user's voice, speaking to the sender.
+
+NON-NEGOTIABLE RULES for replies:
+- Sound like a real human typing on their phone: short natural lines, contractions, no formal-letter language. NEVER open with "I hope this message finds you well" or similar.
+- Mirror the sender's energy and language: if they wrote in Nigerian Pidgin or mixed slang, the reply may naturally match it; if they were brief, don't send an essay back.
+- Match the stated relationship context (business, dating, friends, work) and the platform's texting culture.
+- The reply is ready to send verbatim — no placeholders like [name], no advice to the user, no meta commentary inside the reply itself.
+- Business replies protect the deal and the relationship; conflict replies de-escalate without the user losing face; boundary replies are firm but never insulting.`,
+    buildPrompt: (v) =>
+      `Message I received:\n"""\n${v.topic}\n"""\nI am replying as: ${v.voice}\nRelationship context: ${v.context}\nPlatform: ${v.platform}\nTone I want: ${v.tone}\n${v.goal ? `What the reply should achieve: ${v.goal}\n` : ''}${v.extra ? `Extra context: ${v.extra}\n` : ''}Study the message, then write my reply following the response-mode sections exactly. Keep the reply a natural texting length for this platform — match their message, don't write an essay.`,
+  },
+  {
     id: 'monetization',
     name: 'Monetization Ideas',
     tagline: 'Turn your content into income streams',
@@ -339,8 +371,8 @@ export const getTool = (id) => TOOLS.find((t) => t.id === id)
 export function composeSystem(tool, { profile, mode = 'basic', length = 'medium' } = {}) {
   let s = tool.system + personalizationBlock(profile)
   if (tool.platformAware) s += `\n\n${PLATFORM_RULES}`
-  s += CRAFT_RULES
-  s += LENGTH_DIRECTIVE[length] || LENGTH_DIRECTIVE.medium
-  s += MODE_DIRECTIVE[mode] || MODE_DIRECTIVE.basic
+  if (!tool.noCraft) s += CRAFT_RULES
+  if (!tool.noLength) s += LENGTH_DIRECTIVE[length] || LENGTH_DIRECTIVE.medium
+  s += tool.modeDirectives?.[mode] ?? (MODE_DIRECTIVE[mode] || MODE_DIRECTIVE.basic)
   return s
 }

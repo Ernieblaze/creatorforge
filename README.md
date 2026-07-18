@@ -1,6 +1,6 @@
 # ⚡ CreatorForge
 
-**The complete operating system for content creators & hustlers.** 13 AI tools in one premium workspace — posts, scripts, ads, calendars, viral scoring and strategy — built for Nigerian creators, students and small businesses.
+**The complete operating system for content creators & hustlers.** 17 AI tools in one premium workspace — posts, scripts, ads, calendars, viral scoring and strategy — built for Nigerian creators, students and small businesses.
 
 ## Stack
 

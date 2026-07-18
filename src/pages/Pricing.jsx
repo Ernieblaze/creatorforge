@@ -115,7 +115,7 @@ export default function Pricing() {
             {[
               ['Daily credits', '5 / day', 'Unlimited'],
               ['Advanced (premium-quality) mode', 'Limited', 'Unlimited'],
-              ['All 13 AI tools', true, true],
+              ['All 17 AI tools', true, true],
               ['Content library & search', true, true],
               ['Viral Score + "Improve again"', true, true],
               ['30-day content calendar', 'Basic', 'Advanced'],
