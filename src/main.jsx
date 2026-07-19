@@ -6,6 +6,7 @@ import App from './App.jsx'
 import { ThemeProvider } from './context/ThemeContext.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { ToastProvider } from './components/toast.jsx'
+import { Analytics } from '@vercel/analytics/react'
 
 // PWA: register service worker in production builds
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
@@ -51,6 +52,7 @@ createRoot(document.getElementById('root')).render(
         <AuthProvider>
           <ToastProvider>
             <App />
+            <Analytics />
           </ToastProvider>
         </AuthProvider>
       </ThemeProvider>

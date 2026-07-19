@@ -249,6 +249,12 @@ export async function clearChat(userId, thread) {
   localStorage.removeItem(chatKey(thread))
 }
 
+/* ── Output feedback (👍/👎) ─────────────────────────────── */
+export async function saveFeedback(userId, tool, vote) {
+  if (!isSupabaseConfigured) return
+  await supabase.from('output_feedback').insert({ user_id: userId, tool, vote })
+}
+
 /* ── Simple per-user stats for the dashboard ─────────────── */
 export async function getStats(userId) {
   const all = await listGenerations(userId, { limit: 200 })

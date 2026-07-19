@@ -5,9 +5,10 @@ import { Sparkles, Send, AlertTriangle, Crown, BookMarked, Wand2, GripVertical, 
 import { TOOLS, getTool, composeSystem, MODES, LENGTHS } from '../lib/tools'
 import { generate, isAIConfigured } from '../lib/ai'
 import { useAuth } from '../context/AuthContext'
-import { getUsageToday, saveGeneration, listGenerations, loadChat, saveChatMessage, CREDIT_COST } from '../lib/db'
+import { getUsageToday, saveGeneration, listGenerations, loadChat, saveChatMessage, saveFeedback, CREDIT_COST } from '../lib/db'
 import { isToolEnabled } from '../lib/adminData'
 import { Spinner, CopyButton, Markdown, EmptyState, DemoModal } from '../components/ui'
+import { useToast } from '../components/toast'
 import BioLinkBuilder from '../components/BioLinkBuilder'
 
 /* ═══════════════════ Shared: tool switcher strip ════════ */
@@ -63,6 +64,45 @@ function ToolHeader({ tool }) {
       {showDemo && <DemoModal tool={tool} onClose={() => setShowDemo(false)} />}
     </div>
     </>
+  )
+}
+
+/* ═══════════════════ Shared: output feedback ════════════ */
+/* One 👍/👎 per generation — keyed by `outputKey` so voting resets on
+   each new result. Data lands in output_feedback for the admin. */
+function FeedbackRow({ toolId, outputKey }) {
+  const { user } = useAuth()
+  const toast = useToast()
+  const [voted, setVoted] = useState(null)
+  useEffect(() => setVoted(null), [outputKey])
+
+  async function vote(v) {
+    if (voted) return
+    setVoted(v)
+    saveFeedback(user.id, toolId, v)
+    toast(v === 1 ? 'Thanks for the feedback! 🙌' : "Thanks — we'll keep improving this tool.")
+  }
+
+  return (
+    <div className="mt-5 flex items-center gap-2 border-t border-slate-100 pt-4 dark:border-ink-700">
+      <span className="text-xs text-slate-400">Was this result good?</span>
+      {[{ v: 1, label: '👍' }, { v: -1, label: '👎' }].map(({ v, label }) => (
+        <button
+          key={v}
+          onClick={() => vote(v)}
+          disabled={Boolean(voted)}
+          className={`rounded-lg border px-2.5 py-1 text-sm transition-all ${
+            voted === v
+              ? 'border-brand-500 bg-brand-500/12'
+              : voted
+                ? 'border-slate-200 opacity-40 dark:border-ink-700'
+                : 'border-slate-200 hover:border-brand-400 hover:scale-110 dark:border-ink-600'
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
   )
 }
 
@@ -566,7 +606,7 @@ function GenericTool({ tool }) {
           {usage && (
             <p className="text-center text-xs text-slate-400">
               {plan === 'free'
-                ? <><span className={usage.remaining + bonus < cost ? 'font-bold text-amber-500' : 'font-semibold text-slate-500 dark:text-slate-300'}>{usage.remaining}</span> of {usage.limit} daily credits left{bonus > 0 && <span className="text-brand-500"> · +{bonus} bonus 🎁</span>}</>
+                ? <><span className={usage.remaining + bonus < cost ? 'font-bold text-amber-500' : 'font-semibold text-slate-500 dark:text-slate-300'}>{usage.remaining}</span> of {usage.limit} daily credits left{bonus > 0 && <span className="text-brand-500"> · +{bonus} bonus 🎁</span>} · resets 1 AM</>
                 : <>Premium · {usage.remaining} credits left today</>}
             </p>
           )}
@@ -605,6 +645,7 @@ function GenericTool({ tool }) {
                   <CopyButton text={output} />
                 </div>
                 <Markdown text={output} />
+                <FeedbackRow toolId={tool.id} outputKey={output} />
                 {tool.followups && (
                   <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-4 dark:border-ink-700">
                     {tool.followups.map((f) => (

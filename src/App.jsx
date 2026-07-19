@@ -1,7 +1,8 @@
-import { lazy, Suspense } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { lazy, Suspense, useEffect } from 'react'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import { Spinner } from './components/ui'
+import { getTool } from './lib/tools'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 
@@ -41,6 +42,32 @@ const FullScreenLoader = (
   </div>
 )
 
+/** Browser-tab titles per route — helps navigation, history and SEO. */
+const PAGE_TITLES = {
+  '/': 'CreatorForge — Content OS for Creators & Hustlers',
+  '/login': 'Sign in · CreatorForge',
+  '/terms': 'Terms of Service · CreatorForge',
+  '/privacy': 'Privacy Policy · CreatorForge',
+  '/app': 'Dashboard · CreatorForge',
+  '/app/tools': 'All tools · CreatorForge',
+  '/app/library': 'Library · CreatorForge',
+  '/app/settings': 'Settings · CreatorForge',
+  '/app/pricing': 'Pricing · CreatorForge',
+  '/app/partner': 'Partner Program · CreatorForge',
+}
+
+function TitleUpdater() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    const toolMatch = pathname.match(/^\/app\/tool\/([\w-]+)/)
+    document.title =
+      (toolMatch && getTool(toolMatch[1]) && `${getTool(toolMatch[1]).name} · CreatorForge`) ||
+      PAGE_TITLES[pathname] ||
+      (pathname.startsWith('/admin') ? 'Admin · CreatorForge' : 'CreatorForge')
+  }, [pathname])
+  return null
+}
+
 function Protected({ children }) {
   const { user, loading } = useAuth()
   if (loading) return FullScreenLoader
@@ -50,6 +77,7 @@ function Protected({ children }) {
 export default function App() {
   return (
     <Suspense fallback={FullScreenLoader}>
+      <TitleUpdater />
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />

@@ -47,6 +47,7 @@ export default function Library() {
 
   async function removeSelected() {
     const n = selected.size
+    if (!window.confirm(`Delete ${n} item${n > 1 ? 's' : ''} permanently? This cannot be undone.`)) return
     for (const id of selected) await deleteGeneration(user.id, id)
     setItems((s) => s.filter((g) => !selected.has(g.id)))
     setSelected(new Set())
@@ -61,6 +62,7 @@ export default function Library() {
   )
 
   async function remove(id) {
+    if (!window.confirm('Delete this content permanently? This cannot be undone.')) return
     await deleteGeneration(user.id, id)
     setItems((s) => s.filter((g) => g.id !== id))
     setOpen(null)

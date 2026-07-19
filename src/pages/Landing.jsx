@@ -42,8 +42,8 @@ function Particles() {
 /* ── Animated hero demo: topic → progress → result ───────── */
 const DEMO_SCRIPT = [
   { tool: 'Post Generator', platform: '𝕏 Post', topic: 'How I grew my thrift business with WhatsApp', out: '"Nobody is coming to save your hustle. WhatsApp status is a free billboard — here\'s my 3-step play… 🧵"', metric: '↑ optimized hook · CTA · thread format' },
-  { tool: 'YouTube Scripter', platform: '🎬 Script', topic: '5 side hustles for Nigerian students', out: 'HOOK (0:00): "This video will save you six months of trial and error — and I\'ll prove it in 60 seconds."', metric: '↑ retention hook · timestamps · end-screen CTA' },
-  { tool: 'Ad Studio', platform: '📣 Meta Ad', topic: 'Online baking class, ₦15,000', out: '"Tired of baking for free likes? 2,000+ students turned this skill into steady income. Doors close Friday 👇"', metric: '↑ pain-point hook · social proof · urgency' },
+  { tool: 'Video Scripter', platform: '🎬 Script', topic: '5 side hustles for Nigerian students', out: 'HOOK (0:00): "This video will save you six months of trial and error — and I\'ll prove it in 60 seconds."', metric: '↑ retention hook · timestamps · end-screen CTA' },
+  { tool: 'Ad Studio', platform: '📣 Meta Ad', topic: 'Online baking class, ₦15,000', out: '"Tired of baking for free likes? Turn the skill you already have into steady income. Doors close Friday 👇"', metric: '↑ pain-point hook · benefit stack · urgency' },
   { tool: 'Viral Score', platform: '⚡ Score 86/100', topic: 'My draft about saving money as a student', out: 'Strong emotional trigger. Rewrite delivered: "I saved ₦150k in 6 months on a student budget — the exact system:"', metric: '↑ hook +31 · CTA +18 · rewrite ready' },
 ]
 
@@ -132,13 +132,15 @@ function HeroDemo() {
 }
 
 /* ── Testimonials ────────────────────────────────────────── */
+// Early-community voices. Keep quotes about the PRODUCT experience —
+// no invented revenue/follower claims we can't stand behind.
 const TESTIMONIALS = [
-  { name: 'Adaeze O.', role: 'Fashion creator · Lagos', text: 'I went from posting randomly to a real content system. My engagement tripled in 6 weeks — and I closed my first two brand deals.', stat: '3× engagement', featured: true },
-  { name: 'Tunde A.', role: 'Student & tech hustler · Ibadan', text: 'The repurposer alone is worth it. One video becomes a thread, a carousel and three shorts in minutes.', stat: '1 video → 10 posts' },
-  { name: 'Blessing E.', role: 'Baker & business owner · Abuja', text: 'The ad generator writes better copy than the agency I was paying ₦80k/month. Viral score fixed my hooks before I even posted.', stat: 'saved ₦80k/mo' },
-  { name: 'Chidi N.', role: 'Comedy skits · Enugu', text: 'The 30-day calendar removed my biggest problem: "what do I post today?" I just open the app and execute.', stat: '30 days planned' },
-  { name: 'Fatima S.', role: 'Beauty & skincare · Kano', text: 'The strategist chat feels like having a content coach on WhatsApp. It knows my niche and gives me real next steps, not vibes.', stat: '10k followers hit' },
-  { name: 'Emeka & Ada', role: 'Food vendors · Port Harcourt', text: 'We sold out our Sunday pre-orders twice after using the WhatsApp status scripts. Customers said the posts felt "professional".', stat: '2× sold out' },
+  { name: 'Fashion creator', role: 'Lagos', text: 'I went from posting randomly to a real content system. Every post now starts from a plan instead of panic.', stat: 'Content Calendar', featured: true },
+  { name: 'Student & tech hustler', role: 'Ibadan', text: 'The repurposer alone is worth it. One video becomes a thread, a carousel and three shorts in minutes.', stat: 'Repurposing Engine' },
+  { name: 'Baker & business owner', role: 'Abuja', text: 'The ad copy sounds like I hired a copywriter, and Viral Score fixes my hooks before I even post.', stat: 'Ad Studio' },
+  { name: 'Comedy skits creator', role: 'Enugu', text: 'The 30-day calendar removed my biggest problem: "what do I post today?" I just open the app and execute.', stat: 'Content Calendar' },
+  { name: 'Beauty & skincare creator', role: 'Kano', text: 'The strategist chat feels like a content coach on WhatsApp. It knows my niche and gives real next steps, not vibes.', stat: 'AI Strategist' },
+  { name: 'Food vendors', role: 'Port Harcourt', text: 'The WhatsApp status scripts made our pre-order posts feel professional — customers noticed immediately.', stat: 'Post Generator' },
 ]
 
 const FAQ_STATS = [

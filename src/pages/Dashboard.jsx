@@ -50,6 +50,15 @@ export default function Dashboard() {
     })
   }, [user, profile]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // First visit of the day: remind free users their credits are fresh.
+  useEffect(() => {
+    if (!user || plan !== 'free') return
+    const today = new Date().toISOString().slice(0, 10)
+    if (localStorage.getItem('cf_daily_greet') === today) return
+    localStorage.setItem('cf_daily_greet', today)
+    toast('🔥 Your 5 daily credits are fresh — make something today!')
+  }, [user, plan]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Approved partners: celebrate new commissions since the last visit,
   // so earnings never arrive silently.
   useEffect(() => {
@@ -81,7 +90,7 @@ export default function Dashboard() {
         </div>
         {usage && plan === 'free' && (
           <span className="rounded-full border border-slate-200 px-3.5 py-1.5 text-xs font-semibold text-slate-500 dark:border-ink-600 dark:text-slate-400">
-            {usage.remaining} / {usage.limit} daily credits left
+            {usage.remaining} / {usage.limit} daily credits left · resets 1 AM
           </span>
         )}
         {plan === 'premium' && (
