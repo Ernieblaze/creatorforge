@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, Link, Navigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Send, AlertTriangle, Crown, BookMarked, Wand2, GripVertical, Eye } from 'lucide-react'
-import { getTool, composeSystem, MODES, LENGTHS } from '../lib/tools'
+import { TOOLS, getTool, composeSystem, MODES, LENGTHS } from '../lib/tools'
 import { generate, isAIConfigured } from '../lib/ai'
 import { useAuth } from '../context/AuthContext'
 import { getUsageToday, saveGeneration, listGenerations, loadChat, saveChatMessage, CREDIT_COST } from '../lib/db'
@@ -10,10 +10,43 @@ import { isToolEnabled } from '../lib/adminData'
 import { Spinner, CopyButton, Markdown, EmptyState, DemoModal } from '../components/ui'
 import BioLinkBuilder from '../components/BioLinkBuilder'
 
+/* ═══════════════════ Shared: tool switcher strip ════════ */
+/* Horizontal pill strip so users can hop between tools without
+   going back to the dashboard. Active pill scrolls into view. */
+function ToolSwitcher({ current }) {
+  const activeRef = useRef(null)
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' })
+  }, [current])
+  return (
+    <div className="scrollbar-none -mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+      {TOOLS.filter((t) => isToolEnabled(t.id)).map((t) => {
+        const active = t.id === current
+        return (
+          <Link
+            key={t.id}
+            to={`/app/tool/${t.id}`}
+            ref={active ? activeRef : null}
+            className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all ${
+              active
+                ? 'border-brand-500 bg-brand-500/12 text-brand-600 dark:text-brand-300'
+                : 'border-slate-300 text-slate-500 hover:border-brand-400 hover:text-brand-500 dark:border-ink-600 dark:text-slate-400'
+            }`}
+          >
+            <t.icon size={13} /> {t.name}
+          </Link>
+        )
+      })}
+    </div>
+  )
+}
+
 /* ═══════════════════ Shared: tool header ════════════════ */
 function ToolHeader({ tool }) {
   const [showDemo, setShowDemo] = useState(false)
   return (
+    <>
+    <ToolSwitcher current={tool.id} />
     <div className="mb-6 flex items-center gap-4">
       <span className={`grid h-13 w-13 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${tool.color} p-3.5 text-white shadow-lg`}>
         <tool.icon size={24} />
@@ -29,6 +62,7 @@ function ToolHeader({ tool }) {
       )}
       {showDemo && <DemoModal tool={tool} onClose={() => setShowDemo(false)} />}
     </div>
+    </>
   )
 }
 

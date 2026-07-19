@@ -68,6 +68,8 @@ body {
 
 /* Slim scrollbars */
 * { scrollbar-width: thin; scrollbar-color: rgb(100 116 139 / 0.35) transparent; }
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
 
 /* ── Reusable component classes ──────────────────────────── */
 @utility card {

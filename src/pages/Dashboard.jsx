@@ -9,7 +9,6 @@ import { isToolEnabled } from '../lib/adminData'
 import { useToast } from '../components/toast'
 import Onboarding from '../components/Onboarding'
 
-const QUICK_TOOLS = ['post-generator', 'yt-script', 'bio-link', 'audience-lab', 'image-prompts', 'repurposer', 'viral-score', 'ad-generator', 'strategist']
 
 /** Rotating daily idea suggestions — clicking one pre-fills the tool via ?topic=. */
 const IDEA_POOL = [
@@ -119,14 +118,13 @@ export default function Dashboard() {
 
       {/* Quick tools */}
       <section>
-        <h2 className="mb-4 font-bold text-slate-900 dark:text-white">Quick create</h2>
+        <h2 className="mb-4 font-bold text-slate-900 dark:text-white">All tools</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {QUICK_TOOLS.filter(isToolEnabled).map((id, i) => {
-            const t = getTool(id)
+          {TOOLS.filter((t) => isToolEnabled(t.id)).map((t, i) => {
             return (
-              <motion.div key={id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}>
+              <motion.div key={t.id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + Math.min(i, 9) * 0.04 }}>
                 <Link
-                  to={`/app/tool/${id}`}
+                  to={`/app/tool/${t.id}`}
                   className="card group flex items-center gap-4 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-400/50 hover:shadow-lg hover:shadow-brand-600/10"
                 >
                   <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${t.color} text-white transition-transform group-hover:scale-110`}>
