@@ -13,6 +13,15 @@ import {
   requestPayout,
 } from '../lib/partners'
 
+/** Commission tiers — derived from the % the admin sets per partner.
+ *  Higher tiers are a status partners work to keep. */
+export function tierFor(percent) {
+  const p = Number(percent)
+  if (p >= 35) return { label: 'VIP Partner', emoji: '🥇', cls: 'bg-amber-400/15 text-amber-500 border-amber-400/40' }
+  if (p >= 30) return { label: 'Creator Partner', emoji: '🥈', cls: 'bg-slate-400/15 text-slate-500 border-slate-400/40 dark:text-slate-300' }
+  return { label: 'Standard Partner', emoji: '🤝', cls: 'bg-brand-500/12 text-brand-600 border-brand-500/30 dark:text-brand-300' }
+}
+
 const STATUS_BADGE = {
   pending: 'bg-amber-500/12 text-amber-600 dark:text-amber-400',
   approved: 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400',
@@ -164,9 +173,14 @@ function PartnerDashboard({ user, partner, refresh }) {
           <p className="text-sm font-bold text-slate-900 dark:text-white">Your partner link</p>
           <p className="truncate text-xs text-slate-500 dark:text-slate-400">{link}</p>
         </div>
-        <span className="rounded-full bg-brand-500/12 px-3 py-1 text-xs font-bold text-brand-600 dark:text-brand-300">
-          {Number(partner.commission_percent)}% per payment
-        </span>
+        {(() => {
+          const tier = tierFor(partner.commission_percent)
+          return (
+            <span className={`rounded-full border px-3 py-1 text-xs font-bold ${tier.cls}`}>
+              {tier.emoji} {tier.label} · {Number(partner.commission_percent)}% per payment
+            </span>
+          )
+        })()}
         <button
           className="btn-secondary !px-3.5 !py-2 text-xs"
           onClick={() => { navigator.clipboard.writeText(link); toast('Link copied!') }}
@@ -174,6 +188,13 @@ function PartnerDashboard({ user, partner, refresh }) {
           <Copy size={14} /> Copy
         </button>
       </div>
+
+      {Number(partner.commission_percent) < 30 && (
+        <p className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs text-slate-500 dark:border-ink-700 dark:text-slate-400">
+          💡 Bring consistent paying referrals and you can be upgraded to <b>🥈 Creator (30%)</b> or{' '}
+          <b>🥇 VIP (35%+)</b> tier — higher commission on every payment.
+        </p>
+      )}
 
       {/* Balances */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">

@@ -7,6 +7,7 @@ import {
   nairaFromKobo, adminListPartners, adminSetPartner,
   adminListPayouts, adminResolvePayout, adminListCommissions,
 } from '../../lib/partners'
+import { tierFor } from '../Partner'
 
 const TABS = ['Partners', 'Payout requests', 'Activity']
 
@@ -50,6 +51,11 @@ function PartnerRow({ p, onChange }) {
       <div className="flex flex-wrap items-center gap-2">
         <p className="font-bold text-slate-900 dark:text-white">{p.profile?.username || p.profile?.email || p.user_id.slice(0, 8)}</p>
         <span className="text-xs text-slate-400">{p.profile?.email}</span>
+        {p.status === 'approved' && (
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-500 dark:bg-ink-800 dark:text-slate-300">
+            {tierFor(p.commission_percent).emoji} {tierFor(p.commission_percent).label}
+          </span>
+        )}
         <span className="ml-auto"><Badge s={p.status} /></span>
       </div>
       <div className="grid gap-2 text-xs text-slate-500 sm:grid-cols-2 dark:text-slate-400">
