@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, Link, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, FolderHeart, Settings as SettingsIcon, Crown,
-  ShieldCheck, LogOut, Wrench, Megaphone, X,
+  ShieldCheck, LogOut, Wrench, Megaphone, X, Handshake,
 } from 'lucide-react'
 import { Logo, ThemeToggle } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
@@ -75,6 +75,7 @@ export default function AppLayout() {
 
           <p className="px-3 pt-5 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Workspace</p>
           <NavLink to="/app/library" className={navItem}><FolderHeart size={17} /> Library</NavLink>
+          <NavLink to="/app/partner" className={navItem}><Handshake size={17} /> Partner Program</NavLink>
           <NavLink to="/app/settings" className={navItem}><SettingsIcon size={17} /> Settings</NavLink>
           {isAdmin && (
             <NavLink to="/admin" className={navItem}><ShieldCheck size={17} /> Admin</NavLink>

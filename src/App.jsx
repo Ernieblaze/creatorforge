@@ -13,6 +13,7 @@ const ToolPage = lazy(() => import('./pages/ToolPage'))
 const Library = lazy(() => import('./pages/Library'))
 const Settings = lazy(() => import('./pages/Settings'))
 const Pricing = lazy(() => import('./pages/Pricing'))
+const Partner = lazy(() => import('./pages/Partner'))
 
 // Admin dashboard (own layout + guard inside AdminLayout)
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
@@ -24,6 +25,7 @@ const AdminAi = lazy(() => import('./pages/admin/AiUsage'))
 const AdminFlags = lazy(() => import('./pages/admin/FlagsSection'))
 const AdminAnnouncements = lazy(() => import('./pages/admin/AnnouncementsSection'))
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'))
+const AdminPartners = lazy(() => import('./pages/admin/PartnersSection'))
 
 // Public link-in-bio pages (/u/:slug) — no auth required
 const BioPage = lazy(() => import('./pages/BioPage'))
@@ -60,6 +62,7 @@ export default function App() {
           <Route path="library" element={<Library />} />
           <Route path="settings" element={<Settings />} />
           <Route path="pricing" element={<Pricing />} />
+          <Route path="partner" element={<Partner />} />
           {/* old admin location → new dedicated section */}
           <Route path="admin" element={<Navigate to="/admin" replace />} />
         </Route>
@@ -71,6 +74,7 @@ export default function App() {
           <Route path="ai" element={<AdminAi />} />
           <Route path="flags" element={<AdminFlags />} />
           <Route path="announcements" element={<AdminAnnouncements />} />
+          <Route path="partners" element={<AdminPartners />} />
           <Route path="settings" element={<AdminSettings />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

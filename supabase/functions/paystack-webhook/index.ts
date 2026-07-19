@@ -87,6 +87,37 @@ Deno.serve(async (req) => {
         plan: "premium",
         premium_until: accessUntil(interval),
       }).eq("id", userId);
+
+      // ── Partner commission ─────────────────────────────
+      // If this paying user was referred by an APPROVED partner,
+      // credit the partner their % of this charge. The unique
+      // payment_reference makes retried webhooks harmless, and the
+      // 14-day available_at hold (table default) survives refunds.
+      const { data: payerProfile } = await admin
+        .from("profiles").select("referred_by").eq("id", userId).maybeSingle();
+      const referrerId = payerProfile?.referred_by;
+      if (referrerId && referrerId !== userId && data.reference) {
+        const { data: partner } = await admin
+          .from("partners")
+          .select("user_id, commission_percent, status")
+          .eq("user_id", referrerId).eq("status", "approved").maybeSingle();
+        if (partner) {
+          const amountKobo = Math.round(data.amount * (partner.commission_percent / 100));
+          if (amountKobo > 0) {
+            await admin.from("partner_commissions").upsert(
+              {
+                partner_id: partner.user_id,
+                referred_user: userId,
+                payment_reference: data.reference,
+                payment_kobo: data.amount,
+                percent: partner.commission_percent,
+                amount_kobo: amountKobo,
+              },
+              { onConflict: "payment_reference", ignoreDuplicates: true },
+            );
+          }
+        }
+      }
       break;
     }
 

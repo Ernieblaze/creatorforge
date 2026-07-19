@@ -1,7 +1,7 @@
 import { NavLink, Outlet, Link, Navigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Banknote, BarChart3, Cpu, ToggleRight,
-  Megaphone, Settings, ArrowLeft, ShieldCheck,
+  Megaphone, Settings, ArrowLeft, ShieldCheck, Handshake,
 } from 'lucide-react'
 import { Logo, ThemeToggle, Spinner } from '../../components/ui'
 import { useAuth } from '../../context/AuthContext'
@@ -12,6 +12,7 @@ export const ADMIN_SECTIONS = [
   { to: '/admin/revenue', icon: Banknote, label: 'Revenue & Subs' },
   { to: '/admin/tools', icon: BarChart3, label: 'Tool Analytics' },
   { to: '/admin/ai', icon: Cpu, label: 'AI Usage & Cost' },
+  { to: '/admin/partners', icon: Handshake, label: 'Partners' },
   { to: '/admin/flags', icon: ToggleRight, label: 'Feature Flags' },
   { to: '/admin/announcements', icon: Megaphone, label: 'Announcements' },
   { to: '/admin/settings', icon: Settings, label: 'Settings' },
