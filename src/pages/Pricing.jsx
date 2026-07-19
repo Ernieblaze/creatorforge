@@ -113,7 +113,7 @@ export default function Pricing() {
           </thead>
           <tbody>
             {[
-              ['Daily credits', '5 / day', 'Unlimited'],
+              ['Daily credits', '5 / day', '50 / day (fair use)'],
               ['Advanced (premium-quality) mode', 'Limited', 'Unlimited'],
               ['All 17 AI tools', true, true],
               ['Content library & search', true, true],

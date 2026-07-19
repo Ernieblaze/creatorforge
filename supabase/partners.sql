@@ -14,6 +14,12 @@
 --     from their own bank → admin marks paid. No automatic transfers.
 -- ═══════════════════════════════════════════════════════════
 
+-- ── Security fix (2026-07-19): ai_usage as the credit ledger ──
+-- The generate-content function now counts daily credits from ai_usage
+-- (rows it writes itself) instead of client-written generations rows,
+-- closing the "generate without saving = free AI" hole.
+alter table public.ai_usage add column if not exists credits integer not null default 1;
+
 -- ── Tables ────────────────────────────────────────────────
 create table if not exists public.partners (
   user_id uuid primary key references auth.users (id) on delete cascade,

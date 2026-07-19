@@ -323,7 +323,7 @@ export default function Landing() {
             <p className="font-bold text-slate-900 dark:text-white">Free</p>
             <p className="mt-3 text-4xl font-extrabold text-slate-900 dark:text-white">₦0<span className="text-base font-medium text-slate-400">/forever</span></p>
             <ul className="mt-6 space-y-3 text-sm text-slate-600 dark:text-slate-300">
-              {['10 generations per day', 'All 17 tools (basic)', 'Content library', 'Community support'].map((f) => (
+              {['5 free credits every day', 'All 17 tools (basic)', 'Content library', 'Community support'].map((f) => (
                 <li key={f} className="flex items-center gap-2.5"><Check size={16} className="text-emerald-500" /> {f}</li>
               ))}
             </ul>
@@ -335,7 +335,7 @@ export default function Landing() {
             <p className="mt-3 text-4xl font-extrabold text-slate-900 dark:text-white">₦3,000<span className="text-base font-medium text-slate-400">/month</span></p>
             <p className="mt-1 text-xs font-medium text-emerald-500">₦30,000/year — save 2 months</p>
             <ul className="mt-6 space-y-3 text-sm text-slate-600 dark:text-slate-300">
-              {['Unlimited generations', 'Advanced tool modes & priority AI', 'Full history + exports', 'Early access to new tools', 'Priority support'].map((f) => (
+              {['50 credits daily (fair-use "unlimited")', 'Advanced tool modes & priority AI', 'Full history + exports', 'Early access to new tools', 'Priority support'].map((f) => (
                 <li key={f} className="flex items-center gap-2.5"><Check size={16} className="text-emerald-500" /> {f}</li>
               ))}
             </ul>

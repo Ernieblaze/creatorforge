@@ -275,6 +275,130 @@ create trigger profiles_protect_plan
   before update on public.profiles
   for each row execute function public.protect_plan_column();
 
+-- ═══════════════════════════════════════════════════════════
+-- PRODUCTION UPGRADES (reconstructed 2026-07-19)
+-- Everything below was originally applied to the live database via
+-- dashboard pastes and is committed here so the schema can be rebuilt
+-- from this file alone. The `create or replace` definitions below
+-- intentionally OVERRIDE earlier versions in this file — this script
+-- runs top-to-bottom and the last definition wins.
+-- ═══════════════════════════════════════════════════════════
+
+-- ── Credit economy columns ────────────────────────────────
+alter table public.generations add column if not exists credits integer not null default 1;
+alter table public.ai_usage add column if not exists credits integer not null default 1;
+
+-- ── Referral system (+5 bonus credits both sides) ─────────
+alter table public.profiles add column if not exists bonus_credits integer not null default 0;
+alter table public.profiles add column if not exists referred_by uuid references auth.users (id);
+
+create or replace function public.apply_referral(referrer uuid)
+returns boolean language plpgsql security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+begin
+  if uid is null or referrer is null or referrer = uid then return false; end if;
+  if not exists (select 1 from public.profiles where id = referrer) then return false; end if;
+  -- one referral per account
+  update public.profiles set referred_by = referrer where id = uid and referred_by is null;
+  if not found then return false; end if;
+  -- both sides get +5 bonus credits; app.internal lets the protect
+  -- trigger distinguish this server-side grant from a browser write
+  perform set_config('app.internal', 'referral', true);
+  update public.profiles set bonus_credits = coalesce(bonus_credits, 0) + 5 where id = uid;
+  update public.profiles set bonus_credits = coalesce(bonus_credits, 0) + 5 where id = referrer;
+  perform set_config('app.internal', '', true);
+  return true;
+end;
+$$;
+
+-- ── Plan + bonus column protection (upgraded) ─────────────
+-- Browsers may never change plan or bonus_credits; only the service
+-- role, an admin, or internal server-side functions (app.internal).
+create or replace function public.protect_plan_column()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  internal boolean := coalesce(current_setting('app.internal', true), '') <> '';
+begin
+  if auth.role() <> 'service_role' and not public.is_admin() and not internal then
+    if new.plan is distinct from old.plan then new.plan := old.plan; end if;
+    if new.bonus_credits is distinct from old.bonus_credits then
+      new.bonus_credits := old.bonus_credits;
+    end if;
+    if new.referred_by is distinct from old.referred_by and old.referred_by is not null then
+      new.referred_by := old.referred_by;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+-- ── Daily limit trigger (upgraded: credit-sum + bonus) ────
+-- Free = 5 credits/day, premium = 50/day fair use; when the daily
+-- budget is exhausted, referral bonus credits are consumed 1:1.
+create or replace function public.enforce_daily_limit()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  user_plan text;
+  until timestamptz;
+  bonus integer;
+  cap integer;
+  used integer;
+  cost integer := coalesce(new.credits, 1);
+  overflow integer;
+begin
+  select plan, premium_until, coalesce(bonus_credits, 0)
+    into user_plan, until, bonus
+    from public.profiles where id = new.user_id;
+  if coalesce(user_plan, 'free') = 'premium'
+     and until is not null and until < now() then
+    user_plan := 'free'; -- lapsed premium
+  end if;
+  cap := case when coalesce(user_plan, 'free') = 'premium' then 50 else 5 end;
+  select coalesce(sum(coalesce(credits, 1)), 0) into used
+    from public.generations
+    where user_id = new.user_id and created_at >= date_trunc('day', now());
+  if used + cost > cap then
+    overflow := (used + cost) - cap;
+    if bonus >= overflow then
+      perform set_config('app.internal', 'limit', true);
+      update public.profiles set bonus_credits = bonus_credits - overflow
+        where id = new.user_id;
+      perform set_config('app.internal', '', true);
+    else
+      raise exception 'Daily credit limit reached. Upgrade to Premium for unlimited generations.';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+-- ── Link-in-Bio pages (public /u/:slug) ───────────────────
+create table if not exists public.bio_pages (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  slug text unique not null,
+  name text default '',
+  bio text default '',
+  avatar_url text default '',
+  links jsonb not null default '[]',
+  socials jsonb not null default '{}',
+  theme text not null default 'dark',
+  updated_at timestamptz not null default now()
+);
+
+alter table public.bio_pages enable row level security;
+drop policy if exists "bio public read" on public.bio_pages;
+drop policy if exists "bio own write" on public.bio_pages;
+drop policy if exists "bio own update" on public.bio_pages;
+drop policy if exists "bio own delete" on public.bio_pages;
+create policy "bio public read" on public.bio_pages for select using (true);
+create policy "bio own write" on public.bio_pages for insert with check (auth.uid() = user_id);
+create policy "bio own update" on public.bio_pages for update using (auth.uid() = user_id);
+create policy "bio own delete" on public.bio_pages for delete using (auth.uid() = user_id);
+
+-- NOTE: the partner program schema lives in supabase/partners.sql —
+-- run that file after this one when rebuilding from scratch.
+
 -- ── Admin helper view ─────────────────────────────────────
 -- security_invoker makes the view respect RLS: admins (via is_admin()
 -- policies) see everyone; regular users would only see themselves.

@@ -29,7 +29,7 @@ The app runs immediately in **demo mode** — local auth session, localStorage p
    - `chat_messages` — AI Strategist history, synced across devices
    - `admins` + `is_admin()` — **edit the seeded email in the script if yours differs**; must match `VITE_ADMIN_EMAIL`
    - RLS on every table: users see only their own rows; admins can read everything
-   - Server-side triggers: free users hard-capped at **10 generations/day**, and the `plan` column can only be changed by the service role (payment webhook) or an admin — never from the browser
+   - Server-side triggers: free users hard-capped at **5 credits/day** (premium 50/day fair use, referral bonus credits extend both), and the `plan` column can only be changed by the service role (payment webhook) or an admin — never from the browser
 3. Enable Google under **Authentication → Providers** ([guide](https://supabase.com/docs/guides/auth/social-login/auth-google)); add `http://localhost:5173` and your production URL to redirect URLs.
 4. Copy the project URL + anon key into `.env` (see `.env.example`).
 

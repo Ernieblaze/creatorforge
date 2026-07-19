@@ -21,6 +21,17 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const FREE_DAILY_CREDITS = 5;
 const PREMIUM_DAILY_CREDITS = 50;
 
+// Server-side credit price per call. Mirrors src/lib/tools.js — heavy
+// tools cost more. Unknown tools fall back to the standard price so a
+// spoofed tool id can never make a call free.
+const TOOL_CREDITS: Record<string, { basic: number; advanced: number }> = {
+  "yt-script": { basic: 2, advanced: 3 },
+  "repurposer": { basic: 2, advanced: 3 },
+};
+const creditCostFor = (tool: string, mode: string): number =>
+  TOOL_CREDITS[tool]?.[mode === "advanced" ? "advanced" : "basic"] ??
+  (mode === "advanced" ? 2 : 1);
+
 // Rough public pricing (USD per 1M tokens) for the cost monitor
 const PROVIDERS: Record<string, {
   url: string;
@@ -160,7 +171,7 @@ Deno.serve(async (req) => {
     const { data: { user } } = await userClient.auth.getUser();
     if (!user) return json({ error: "Not signed in" }, 401);
 
-    const { tool = "unknown", system = "", messages = [], maxTokens = 2048 } =
+    const { tool = "unknown", system = "", messages = [], maxTokens = 2048, mode = "basic" } =
       await req.json();
     if (!Array.isArray(messages) || messages.length === 0) {
       return json({ error: "messages required" }, 400);
@@ -178,16 +189,21 @@ Deno.serve(async (req) => {
     // Referral bonus credits extend the daily budget (consumed by the DB trigger)
     const bonusCredits = profile?.bonus_credits ?? 0;
     const cap = (plan === "premium" ? PREMIUM_DAILY_CREDITS : FREE_DAILY_CREDITS) + bonusCredits;
+    const creditCost = creditCostFor(tool, mode);
+    // Usage is counted from ai_usage — rows THIS function writes — so
+    // every AI call is billed even if the caller never saves the result.
+    // (Counting client-written `generations` rows let scripts drain the
+    // AI budget for free.)
     const today = new Date().toISOString().slice(0, 10);
     const { data: todaysRows } = await admin
-      .from("generations")
+      .from("ai_usage")
       .select("credits")
       .eq("user_id", user.id)
       .gte("created_at", `${today}T00:00:00Z`);
     const usedCredits = (todaysRows ?? []).reduce(
       (s: number, r: { credits?: number }) => s + (r.credits ?? 1), 0,
     );
-    if (usedCredits >= cap) {
+    if (usedCredits + creditCost > cap) {
       return json({
         error: "Daily credit limit reached. Upgrade to Premium for unlimited generations.",
         code: "LIMIT_REACHED",
@@ -221,16 +237,23 @@ Deno.serve(async (req) => {
     const meta = PROVIDERS[providerName];
     const cost =
       (result.inputTokens * meta.costPer1M.input + result.outputTokens * meta.costPer1M.output) / 1e6;
-    // Non-fatal: a logging failure must not lose the generation
-    await admin.from("ai_usage").insert({
-      user_id: user.id,
-      tool,
-      provider: providerName,
-      model,
-      input_tokens: result.inputTokens,
-      output_tokens: result.outputTokens,
-      cost,
-    });
+    // The ai_usage row is also the credit ledger (see limit check above).
+    // Insert with credits; if the column isn't migrated yet, retry without
+    // it — and never let a logging failure lose a paid-for generation.
+    try {
+      const row = {
+        user_id: user.id,
+        tool,
+        provider: providerName,
+        model,
+        input_tokens: result.inputTokens,
+        output_tokens: result.outputTokens,
+        cost,
+      };
+      const { error: logErr } = await admin.from("ai_usage")
+        .insert({ ...row, credits: creditCost });
+      if (logErr) await admin.from("ai_usage").insert(row);
+    } catch { /* non-fatal */ }
 
     return json({
       text: result.text,
