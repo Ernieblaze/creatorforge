@@ -372,11 +372,14 @@ export default function Settings() {
               try {
                 const { error } = await supabase.rpc('delete_my_account')
                 if (error) throw error
-                await signOut()
-                window.location.href = '/'
               } catch (e) {
                 toast(e.message || 'Deletion failed — contact support.', 'error')
+                return
               }
+              // Account is gone — sign-out may error on the dead session,
+              // but the redirect must happen regardless.
+              try { await signOut() } catch { /* session already invalid */ }
+              window.location.href = '/'
             }}
             className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-rose-400/60 px-4 py-2 text-sm font-semibold text-rose-500 transition-colors hover:bg-rose-500/10"
           >

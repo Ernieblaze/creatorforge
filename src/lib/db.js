@@ -58,22 +58,28 @@ export async function getUsageToday(userId, plan = 'free') {
   const limit = PLANS[plan]?.dailyCredits ?? FREE_DAILY_CREDITS
   let used = 0
   if (isSupabaseConfigured) {
-    const { data, error } = await supabase
-      .from('generations')
-      .select('credits')
-      .eq('user_id', userId)
-      .gte('created_at', `${todayKey()}T00:00:00Z`)
-    if (error) {
-      // `credits` column not present yet — fall back to a row count
+    // The server enforces limits from ai_usage (its own ledger — counts
+    // EVERY AI call, including strategist chats). Read both that ledger
+    // and generations and take the higher: if the ai_usage own-read
+    // policy isn't applied yet, RLS silently returns [] and generations
+    // keeps the count honest.
+    const since = `${todayKey()}T00:00:00Z`
+    const [{ data: ledger }, { data: gens, error: gensErr }] = await Promise.all([
+      supabase.from('ai_usage').select('credits').eq('user_id', userId).gte('created_at', since),
+      supabase.from('generations').select('credits').eq('user_id', userId).gte('created_at', since),
+    ])
+    const sum = (rows) => (rows ?? []).reduce((s, r) => s + (r.credits ?? 1), 0)
+    let genUsed = sum(gens)
+    if (gensErr) {
+      // `credits` column not migrated — fall back to a row count
       const { count } = await supabase
         .from('generations')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', userId)
-        .gte('created_at', `${todayKey()}T00:00:00Z`)
-      used = count ?? 0
-    } else {
-      used = (data ?? []).reduce((s, r) => s + (r.credits ?? 1), 0)
+        .gte('created_at', since)
+      genUsed = count ?? 0
     }
+    used = Math.max(sum(ledger), genUsed)
   } else {
     const u = JSON.parse(localStorage.getItem(LS_USAGE) || '{}')
     used = u.date === todayKey() ? u.credits : 0
