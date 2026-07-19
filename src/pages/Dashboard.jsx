@@ -119,22 +119,29 @@ export default function Dashboard() {
       {/* Quick tools */}
       <section>
         <h2 className="mb-4 font-bold text-slate-900 dark:text-white">All tools</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Mobile: 2-up app-menu grid with vertical cards; sm+: fuller horizontal cards */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
           {TOOLS.filter((t) => isToolEnabled(t.id)).map((t, i) => {
             return (
-              <motion.div key={t.id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + Math.min(i, 9) * 0.04 }}>
+              <motion.div
+                key={t.id}
+                initial={{ opacity: 0, y: 18, scale: 0.94 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ delay: 0.06 + Math.min(i, 11) * 0.045, type: 'spring', stiffness: 260, damping: 22 }}
+                whileTap={{ scale: 0.96 }}
+              >
                 <Link
                   to={`/app/tool/${t.id}`}
-                  className="card group flex items-center gap-4 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-400/50 hover:shadow-lg hover:shadow-brand-600/10"
+                  className="card group flex h-full flex-col items-start gap-3 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-400/50 hover:shadow-lg hover:shadow-brand-600/10 sm:flex-row sm:items-center sm:gap-4"
                 >
-                  <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${t.color} text-white transition-transform group-hover:scale-110`}>
+                  <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${t.color} text-white shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3 sm:h-11 sm:w-11`}>
                     <t.icon size={19} />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-slate-900 dark:text-white">{t.name}</p>
-                    <p className="truncate text-xs text-slate-500 dark:text-slate-400">{t.tagline}</p>
+                    <p className="text-sm font-bold leading-snug text-slate-900 dark:text-white">{t.name}</p>
+                    <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-slate-500 sm:mt-0 sm:truncate dark:text-slate-400">{t.tagline}</p>
                   </span>
-                  <ArrowRight size={16} className="text-slate-300 transition-all group-hover:translate-x-0.5 group-hover:text-brand-500" />
+                  <ArrowRight size={16} className="hidden text-slate-300 transition-all group-hover:translate-x-0.5 group-hover:text-brand-500 sm:block" />
                 </Link>
               </motion.div>
             )
