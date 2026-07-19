@@ -14,6 +14,7 @@ const Library = lazy(() => import('./pages/Library'))
 const Settings = lazy(() => import('./pages/Settings'))
 const Pricing = lazy(() => import('./pages/Pricing'))
 const Partner = lazy(() => import('./pages/Partner'))
+const ToolsIndex = lazy(() => import('./pages/ToolsIndex'))
 
 // Admin dashboard (own layout + guard inside AdminLayout)
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
@@ -65,6 +66,7 @@ export default function App() {
         >
           <Route index element={<Dashboard />} />
           <Route path="tool/:id" element={<ToolPage />} />
+          <Route path="tools" element={<ToolsIndex />} />
           <Route path="library" element={<Library />} />
           <Route path="settings" element={<Settings />} />
           <Route path="pricing" element={<Pricing />} />

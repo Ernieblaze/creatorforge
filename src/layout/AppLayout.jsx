@@ -43,6 +43,55 @@ function AnnouncementBanner() {
   )
 }
 
+/**
+ * "Install app" invitation. Android/Chrome: uses the captured
+ * beforeinstallprompt event for a real one-tap install. iOS Safari has no
+ * install API — show the Share → Add to Home Screen hint instead.
+ * Dismissal is remembered on this device.
+ */
+function InstallPrompt() {
+  const [deferred, setDeferred] = useState(null)
+  const [dismissed, setDismissed] = useState(() => Boolean(localStorage.getItem('cf_install_dismissed')))
+  const isStandalone =
+    window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+
+  useEffect(() => {
+    const onPrompt = (e) => { e.preventDefault(); setDeferred(e) }
+    window.addEventListener('beforeinstallprompt', onPrompt)
+    return () => window.removeEventListener('beforeinstallprompt', onPrompt)
+  }, [])
+
+  if (dismissed || isStandalone) return null
+  if (!deferred && !isIOS) return null
+
+  const dismiss = () => { localStorage.setItem('cf_install_dismissed', '1'); setDismissed(true) }
+
+  return (
+    <div className="mb-5 flex items-center justify-between gap-3 rounded-2xl border border-brand-500/30 bg-gradient-to-r from-brand-500/10 to-accent-500/10 px-4 py-3 lg:hidden">
+      <p className="text-sm text-slate-700 dark:text-slate-200">
+        📲 <b>Install CreatorForge</b>{' '}
+        {deferred
+          ? '— one tap, opens like a real app.'
+          : '— tap Share, then "Add to Home Screen".'}
+      </p>
+      <div className="flex shrink-0 items-center gap-2">
+        {deferred && (
+          <button
+            onClick={async () => { deferred.prompt(); const { outcome } = await deferred.userChoice; if (outcome === 'accepted') dismiss(); setDeferred(null) }}
+            className="rounded-lg bg-gradient-to-r from-brand-600 to-accent-600 px-3.5 py-1.5 text-xs font-bold text-white"
+          >
+            Install
+          </button>
+        )}
+        <button onClick={dismiss} aria-label="Dismiss" className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <X size={15} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
 const navItem = ({ isActive }) =>
   `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
     isActive
@@ -131,6 +180,7 @@ export default function AppLayout() {
         <div className="mx-auto max-w-5xl animate-fade-in">
           <div className="mb-4 hidden justify-end lg:flex"><ThemeToggle /></div>
           <AnnouncementBanner />
+          <InstallPrompt />
           <Outlet />
         </div>
       </main>
@@ -138,11 +188,12 @@ export default function AppLayout() {
       <StrategistDock />
 
       {/* ── Mobile bottom nav ───────────────────────────── */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden dark:border-ink-700 dark:bg-ink-850/95">
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden dark:border-ink-700 dark:bg-ink-850/95">
         {[
           { to: '/app', icon: LayoutDashboard, label: 'Home', end: true },
-          { to: '/app/tool/post-generator', icon: Wrench, label: 'Tools' },
+          { to: '/app/tools', icon: Wrench, label: 'Tools' },
           { to: '/app/library', icon: FolderHeart, label: 'Library' },
+          { to: '/app/partner', icon: Handshake, label: 'Partner' },
           { to: '/app/settings', icon: SettingsIcon, label: 'Settings' },
         ].map((i) => (
           <NavLink

@@ -559,7 +559,7 @@ function GenericTool({ tool }) {
           {!isStructured && !tool.noLength && <LengthPicker length={length} setLength={setLength} />}
           {!isStructured && <ModePicker mode={mode} setMode={setMode} remaining={(usage?.remaining ?? cost) + bonus} costs={toolCosts} />}
 
-          <button onClick={run} disabled={!canGenerate || loading || (usage && usage.remaining + bonus < cost)} className="btn-primary w-full !py-3">
+          <button onClick={run} disabled={!canGenerate || loading || (usage && usage.remaining + bonus < cost)} className="btn-primary sticky bottom-20 z-10 w-full !py-3 shadow-lg shadow-brand-600/25 lg:static lg:shadow-none">
             {loading ? <><Spinner size={17} /> Forging…</> : <><Sparkles size={17} /> Generate <span className="opacity-70">· {cost} cr</span></>}
           </button>
 

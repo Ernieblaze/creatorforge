@@ -83,7 +83,7 @@ export default function StrategistDock() {
         initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.4, type: 'spring', stiffness: 260, damping: 18 }}
         onClick={() => setOpen(true)}
         aria-label="Open AI Strategist"
-        className={`fixed bottom-20 right-4 z-40 grid h-13 w-13 place-items-center rounded-2xl bg-gradient-to-br from-brand-600 to-accent-600 p-3.5 text-white shadow-xl shadow-brand-600/35 transition-transform hover:scale-110 active:scale-95 lg:bottom-6 lg:right-6 ${open ? 'hidden' : ''}`}
+        className={`fixed bottom-24 right-3 z-40 grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-brand-600 to-accent-600 p-3 text-white shadow-xl shadow-brand-600/35 transition-transform hover:scale-110 active:scale-95 lg:bottom-6 lg:right-6 lg:h-13 lg:w-13 ${open ? 'hidden' : ''}`}
       >
         <Sparkles size={22} />
       </motion.button>
@@ -96,7 +96,7 @@ export default function StrategistDock() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.97 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
-            className="card fixed inset-x-3 bottom-20 z-40 flex h-[70vh] flex-col overflow-hidden shadow-2xl lg:inset-x-auto lg:bottom-6 lg:right-6 lg:h-140 lg:w-96"
+            className="card fixed inset-x-3 bottom-24 z-40 flex h-[70vh] flex-col overflow-hidden shadow-2xl lg:inset-x-auto lg:bottom-6 lg:right-6 lg:h-140 lg:w-96"
           >
             <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-brand-600 to-accent-600 px-4 py-3 dark:border-ink-700">
               <p className="flex items-center gap-2 text-sm font-bold text-white">
