@@ -109,7 +109,22 @@ async function generateViaEdge({ system, messages, tool, maxTokens, mode }) {
  * @param {string} [opts.tool]  Tool id for usage logging
  * @returns {Promise<string>} assistant text
  */
-export async function generate({ system, messages, tool = 'unknown', maxTokens, mode = 'basic' }) {
+/** Reject after `ms` with a friendly message — slow mobile networks
+ *  otherwise leave users staring at an endless spinner. */
+function withTimeout(promise, ms = 90_000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('This is taking too long — your network may be slow. Please try again.')), ms)
+    ),
+  ])
+}
+
+export async function generate(opts) {
+  return withTimeout(generateInner(opts))
+}
+
+async function generateInner({ system, messages, tool = 'unknown', maxTokens, mode = 'basic' }) {
   const { provider, apiKey, model, meta } = getAIConfig()
   const hasOverride = Boolean(localStorage.getItem('cf_ai_override')) && apiKey
   // Advanced generations get a bigger budget for richer, longer output

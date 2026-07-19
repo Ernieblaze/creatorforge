@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Flame, FileText, Gauge, ArrowRight, Lightbulb, Clock, Crown, BatteryCharging } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getStats, getUsageToday, applyPendingReferral } from '../lib/db'
+import { getMyPartner, listMyCommissions, nairaFromKobo, partnersAvailable } from '../lib/partners'
 import { TOOLS, getTool } from '../lib/tools'
 import { isToolEnabled } from '../lib/adminData'
 import { useToast } from '../components/toast'
@@ -48,6 +49,23 @@ export default function Dashboard() {
       }
     })
   }, [user, profile]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Approved partners: celebrate new commissions since the last visit,
+  // so earnings never arrive silently.
+  useEffect(() => {
+    if (!user || !partnersAvailable) return
+    getMyPartner(user.id).then(async (partner) => {
+      if (partner?.status !== 'approved') return
+      const commissions = await listMyCommissions(user.id)
+      const seen = Number(localStorage.getItem('cf_seen_commissions') || 0)
+      if (commissions.length > seen) {
+        const fresh = commissions.slice(0, commissions.length - seen)
+        const total = fresh.reduce((s, c) => s + c.amount_kobo, 0)
+        toast(`💰 You earned ${nairaFromKobo(total)} in new partner commissions!`)
+      }
+      localStorage.setItem('cf_seen_commissions', String(commissions.length))
+    })
+  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="space-y-8">

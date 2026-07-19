@@ -129,7 +129,9 @@ export default function Login() {
         )}
 
         <p className="mt-6 text-xs leading-relaxed text-slate-400">
-          By continuing you agree to our Terms & Privacy Policy.
+          By continuing you agree to our{' '}
+          <Link to="/terms" className="font-semibold text-brand-500 hover:underline">Terms</Link> &{' '}
+          <Link to="/privacy" className="font-semibold text-brand-500 hover:underline">Privacy Policy</Link>.
         </p>
       </motion.div>
     </div>

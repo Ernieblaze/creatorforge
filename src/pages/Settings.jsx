@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Check, Crown, KeyRound, User, CreditCard, Download, ExternalLink, XCircle, Gift, Copy } from 'lucide-react'
+import { Check, Crown, KeyRound, User, CreditCard, Download, ExternalLink, XCircle, Gift, Copy, LifeBuoy, Trash2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { upsertProfile, listGenerations } from '../lib/db'
 import { getAIConfig, setAIOverride } from '../lib/ai'
-import { getMySubscription, cancelSubscription, getManageLink, isPaystackConfigured } from '../lib/billing'
+import { getMySubscription, cancelSubscription, getManageLink, isPaystackConfigured, verifyPayment } from '../lib/billing'
 import { Spinner } from '../components/ui'
 import { useToast } from '../components/toast'
 
@@ -37,6 +38,40 @@ function BillingSection({ plan }) {
   const [sub, setSub] = useState(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null) // { kind: 'ok'|'err', text }
+  const [reference, setReference] = useState('')
+  const [verifying, setVerifying] = useState(false)
+
+  // "I paid but I'm still free" rescue: re-check the profile (webhook may
+  // have landed by now), and let the user verify a specific Paystack
+  // reference from their receipt email.
+  async function handleRecheck() {
+    setVerifying(true)
+    setNotice(null)
+    try {
+      await refreshProfile()
+      setSub(await getMySubscription(user.id))
+      toast('Plan status refreshed')
+    } finally {
+      setVerifying(false)
+    }
+  }
+
+  async function handleVerifyReference() {
+    const ref = reference.trim()
+    if (!ref || verifying) return
+    setVerifying(true)
+    setNotice(null)
+    try {
+      await verifyPayment(ref)
+      await refreshProfile()
+      setSub(await getMySubscription(user.id))
+      setNotice({ kind: 'ok', text: '✅ Payment confirmed — Premium is now active!' })
+    } catch (e) {
+      setNotice({ kind: 'err', text: `Could not verify that reference: ${e.message}` })
+    } finally {
+      setVerifying(false)
+    }
+  }
 
   useEffect(() => {
     if (user) getMySubscription(user.id).then(setSub)
@@ -124,6 +159,29 @@ function BillingSection({ plan }) {
           {notice.text}
         </p>
       )}
+      {plan === 'free' && isPaystackConfigured() && (
+        <div className="mt-5 rounded-xl border border-slate-200 p-4 dark:border-ink-700">
+          <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Paid but still showing Free?</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            First tap refresh — activation can take a minute. Still free? Paste the payment
+            <b> reference</b> from your Paystack receipt email (looks like <i>T123456789012345</i>) and verify it.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button onClick={handleRecheck} disabled={verifying} className="btn-secondary !px-3.5 !py-2 text-xs">
+              {verifying ? <Spinner size={13} /> : null} Refresh status
+            </button>
+            <input
+              className="input-base !w-auto min-w-44 flex-1 !py-2 text-xs"
+              placeholder="Paystack reference"
+              value={reference}
+              onChange={(e) => setReference(e.target.value)}
+            />
+            <button onClick={handleVerifyReference} disabled={verifying || !reference.trim()} className="btn-primary !px-3.5 !py-2 text-xs">
+              Verify payment
+            </button>
+          </div>
+        </div>
+      )}
       <p className="mt-4 text-xs text-slate-400">
         {isPaystackConfigured()
           ? 'Payments and card details are handled by Paystack — we never see your card.'
@@ -134,7 +192,7 @@ function BillingSection({ plan }) {
 }
 
 export default function Settings() {
-  const { user, profile, plan, refreshProfile } = useAuth()
+  const { user, profile, plan, refreshProfile, signOut } = useAuth()
   const toast = useToast()
   const [username, setUsername] = useState('')
   const [bio, setBio] = useState('')
@@ -286,6 +344,46 @@ export default function Settings() {
           <Download size={16} /> Export my data (JSON)
         </button>
       </Section>
+
+      <Section icon={LifeBuoy} title="Support">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Stuck, found a bug, or a payment issue? Email{' '}
+          <a href="mailto:ernieblazze@gmail.com" className="font-semibold text-brand-500 hover:underline">
+            ernieblazze@gmail.com
+          </a>{' '}
+          and include a screenshot if you can — we reply fast.
+        </p>
+      </Section>
+
+      {isSupabaseConfigured && (
+        <section className="card border-rose-300/50 p-5 sm:p-6 dark:border-rose-500/30">
+          <h2 className="mb-3 flex items-center gap-2.5 font-bold text-rose-500">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-rose-500/10 text-rose-500"><Trash2 size={16} /></span>
+            Danger zone
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Permanently delete your account and ALL data — profile, content library, chat history,
+            bio page and partner records. This cannot be undone. Consider exporting your data first.
+          </p>
+          <button
+            onClick={async () => {
+              const typed = window.prompt('This permanently deletes your account and all data. Type DELETE to confirm:')
+              if (typed !== 'DELETE') return
+              try {
+                const { error } = await supabase.rpc('delete_my_account')
+                if (error) throw error
+                await signOut()
+                window.location.href = '/'
+              } catch (e) {
+                toast(e.message || 'Deletion failed — contact support.', 'error')
+              }
+            }}
+            className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-rose-400/60 px-4 py-2 text-sm font-semibold text-rose-500 transition-colors hover:bg-rose-500/10"
+          >
+            <Trash2 size={14} /> Delete my account
+          </button>
+        </section>
+      )}
     </div>
   )
 }

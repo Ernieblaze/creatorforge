@@ -30,6 +30,10 @@ const AdminPartners = lazy(() => import('./pages/admin/PartnersSection'))
 // Public link-in-bio pages (/u/:slug) — no auth required
 const BioPage = lazy(() => import('./pages/BioPage'))
 
+// Public legal pages
+const Terms = lazy(() => import('./pages/Legal').then((m) => ({ default: m.Terms })))
+const Privacy = lazy(() => import('./pages/Legal').then((m) => ({ default: m.Privacy })))
+
 const FullScreenLoader = (
   <div className="grid min-h-screen place-items-center dark:bg-ink-900">
     <Spinner size={28} className="text-brand-500" />
@@ -49,6 +53,8 @@ export default function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/u/:slug" element={<BioPage />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
         <Route
           path="/app"
           element={

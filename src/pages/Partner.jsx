@@ -299,7 +299,11 @@ export default function Partner() {
       {(partner?.status === 'rejected' || partner?.status === 'suspended') && (
         <div className="card flex items-start gap-3 border-rose-500/30 p-5 text-sm text-slate-600 dark:text-slate-300">
           <XCircle size={18} className="mt-0.5 shrink-0 text-rose-500" />
-          <p>Your partner account is currently <b>{partner.status}</b>. Contact support if you believe this is a mistake.</p>
+          <p>
+            Your partner account is currently <b>{partner.status}</b>.{' '}
+            <a href="mailto:ernieblazze@gmail.com" className="font-semibold text-brand-500 hover:underline">Contact support</a>{' '}
+            if you believe this is a mistake.
+          </p>
         </div>
       )}
 

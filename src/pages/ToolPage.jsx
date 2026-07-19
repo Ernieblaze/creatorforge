@@ -447,13 +447,29 @@ function GenericTool({ tool }) {
         mode: isStructured ? 'advanced' : mode,
         maxTokens: isStructured ? undefined : LENGTHS[length].tokens + (mode === 'advanced' ? 900 : 0),
       })
-      const stripFences = (s) => s.replace(/^```(json)?|```$/gm, '').trim()
-      if (tool.special === 'viral') {
-        setViral(JSON.parse(stripFences(text)))
-      } else if (tool.special === 'calendar') {
-        setCalendar(JSON.parse(stripFences(text)))
-      } else {
-        setOutput(text)
+      // Tolerant JSON extraction: strip code fences, then fall back to the
+      // outermost {...} block — cheap models often wrap JSON in chatter.
+      const parseModelJson = (s) => {
+        const cleaned = s.replace(/^```(json)?|```$/gm, '').trim()
+        try {
+          return JSON.parse(cleaned)
+        } catch {
+          const start = cleaned.indexOf('{')
+          const end = cleaned.lastIndexOf('}')
+          if (start === -1 || end <= start) throw new Error('bad json')
+          return JSON.parse(cleaned.slice(start, end + 1))
+        }
+      }
+      try {
+        if (tool.special === 'viral') {
+          setViral(parseModelJson(text))
+        } else if (tool.special === 'calendar') {
+          setCalendar(parseModelJson(text))
+        } else {
+          setOutput(text)
+        }
+      } catch {
+        throw new Error('The AI returned a malformed result — tap Try again (this attempt was not saved).')
       }
       await saveGeneration({ userId: user.id, tool: tool.id, title: values.topic, input: JSON.stringify(values), output: text, credits: cost })
       // One-time upsell: a free user who just tasted Advanced quality
@@ -565,9 +581,12 @@ function GenericTool({ tool }) {
               </motion.div>
             )}
             {!loading && error && (
-              <motion.p key="err" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-xl border border-rose-400/40 bg-rose-400/10 px-4 py-3 text-sm text-rose-500">
-                {error}
-              </motion.p>
+              <motion.div key="err" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-xl border border-rose-400/40 bg-rose-400/10 px-4 py-3">
+                <p className="text-sm text-rose-500">{error}</p>
+                <button onClick={run} className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg bg-rose-500 px-3.5 py-1.5 text-xs font-bold text-white transition-transform hover:scale-[1.03]">
+                  ↻ Try again
+                </button>
+              </motion.div>
             )}
             {!loading && viral && (
               <motion.div key="viral" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
