@@ -22,3 +22,10 @@ create policy "feedback insert own" on public.output_feedback
   for insert with check (auth.uid() = user_id);
 create policy "feedback admin read" on public.output_feedback
   for select using (public.is_admin());
+
+-- ── ai_usage own-read (2026-07-19) ────────────────────────
+-- Users may read their own usage rows so the in-app credit counter can
+-- mirror the server's ledger exactly (including strategist chats).
+drop policy if exists "ai_usage own read" on public.ai_usage;
+create policy "ai_usage own read" on public.ai_usage
+  for select using (auth.uid() = user_id);
