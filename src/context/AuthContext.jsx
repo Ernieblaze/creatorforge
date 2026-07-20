@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase, isSupabaseConfigured, isAdminEmail } from '../lib/supabase'
 import { getProfile, upsertProfile } from '../lib/db'
+import { isNative, signInWithGoogleNative, initNativeAuth } from '../lib/native'
 
 /**
  * Auth context. With Supabase configured it uses Google OAuth; without it,
@@ -29,6 +30,8 @@ export function AuthProvider({ children }) {
       loadProfile(demo).finally(() => setLoading(false))
       return
     }
+    // Inside the app, catch the OAuth deep-link return and finish sign-in.
+    initNativeAuth(supabase)
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
       loadProfile(session?.user).finally(() => setLoading(false))
@@ -42,6 +45,11 @@ export function AuthProvider({ children }) {
 
   const signInWithGoogle = async () => {
     if (isSupabaseConfigured) {
+      if (isNative) {
+        // App: Custom Tab + deep-link return (see lib/native.js)
+        await signInWithGoogleNative(supabase)
+        return
+      }
       await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo: `${window.location.origin}/app` },

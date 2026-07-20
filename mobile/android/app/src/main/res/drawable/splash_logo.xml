@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- CreatorForge mark: gradient rounded square + lightning bolt.
+     Grouped + centered pivot so the splash AVD can scale it in. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="180dp"
+    android:height="180dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <group
+        android:name="logo"
+        android:pivotX="32"
+        android:pivotY="32">
+        <path android:pathData="M16,0 L48,0 A16,16 0 0 1 64,16 L64,48 A16,16 0 0 1 48,64 L16,64 A16,16 0 0 1 0,48 L0,16 A16,16 0 0 1 16,0 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:type="linear"
+                    android:startX="0" android:startY="0"
+                    android:endX="64" android:endY="64"
+                    android:startColor="#6366F1"
+                    android:endColor="#A855F7" />
+            </aapt:attr>
+        </path>
+        <path
+            android:pathData="M40,14 L26,34 L33,34 L29,50 L43,28 L36,28 L40,14 Z"
+            android:fillColor="#FFFFFF" />
+    </group>
+</vector>
