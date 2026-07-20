@@ -1,14 +1,67 @@
 import { useEffect, useState } from 'react'
-import { Megaphone, Check, Trash2, X, Radio } from 'lucide-react'
+import { Megaphone, Check, Trash2, X, Radio, Bell } from 'lucide-react'
 import {
   getActiveAnnouncement, publishAnnouncement, retractAnnouncement,
   listAnnouncements, deleteAnnouncement,
 } from '../../lib/announcements'
-import { isSupabaseConfigured } from '../../lib/supabase'
+import { isSupabaseConfigured, supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import { SectionHeader } from './shared'
 import { Spinner } from '../../components/ui'
 import { useToast } from '../../components/toast'
+
+/** Compose and send a push notification to every registered device. */
+function PushComposer() {
+  const toast = useToast()
+  const [title, setTitle] = useState('')
+  const [body, setBody] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  async function send() {
+    if (!title.trim() || !body.trim() || busy) return
+    setBusy(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('send-push', {
+        body: { title: title.trim(), body: body.trim() },
+      })
+      if (error) throw error
+      if (data?.error) throw new Error(data.error)
+      toast(`Push sent to ${data?.sent ?? 0} device${data?.sent === 1 ? '' : 's'}`)
+      setTitle(''); setBody('')
+    } catch (e) {
+      toast(e.message || 'Push failed — is the send-push function deployed?', 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <section className="card p-5">
+      <h2 className="mb-1 flex items-center gap-2 font-bold text-slate-900 dark:text-white">
+        <Bell size={17} className="text-accent-500" /> Send push notification
+      </h2>
+      <p className="mb-3 text-xs text-slate-400">Goes to every phone with the app installed — even when the app is closed.</p>
+      <input
+        className="input-base mb-2"
+        placeholder="Title — e.g. 🔥 Your credits are fresh"
+        value={title}
+        maxLength={65}
+        onChange={(e) => setTitle(e.target.value)}
+      />
+      <textarea
+        rows={2}
+        className="input-base resize-y"
+        placeholder="Message — e.g. Come create something today. 5 free credits are waiting."
+        value={body}
+        maxLength={180}
+        onChange={(e) => setBody(e.target.value)}
+      />
+      <button onClick={send} disabled={!title.trim() || !body.trim() || busy} className="btn-primary mt-3 !py-2.5 text-sm">
+        {busy ? <Spinner size={15} /> : <Bell size={15} />} Send to all devices
+      </button>
+    </section>
+  )
+}
 
 /**
  * Publish dismissible banners shown to all users. Backed by the Supabase
@@ -92,6 +145,9 @@ export default function AnnouncementsSection() {
           <p className="text-xs text-slate-400">Publishing replaces the current banner.</p>
         </div>
       </section>
+
+      {/* Push notification composer */}
+      {isSupabaseConfigured && <PushComposer />}
 
       {/* Live banner */}
       <section className="card p-5">
