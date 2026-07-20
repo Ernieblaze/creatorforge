@@ -1,0 +1,22 @@
+{
+  "appId": "app.creatorforge.mobile",
+  "appName": "CreatorForge",
+  "webDir": "www",
+  "server": {
+    "url": "https://creatorforge-sage.vercel.app",
+    "cleartext": false
+  },
+  "android": {
+    "allowMixedContent": false,
+    "overrideUserAgent": "Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36 CreatorForgeApp",
+    "backgroundColor": "#0b0d14"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "backgroundColor": "#0b0d14",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false
+    }
+  }
+}

@@ -219,6 +219,18 @@ export default function Landing() {
                 See all tools <ChevronRight size={16} />
               </a>
             </motion.div>
+            <motion.div {...fadeUp} transition={{ ...fadeUp.transition, delay: 0.24 }} className="mt-4">
+              <a
+                href="/creatorforge.apk"
+                download
+                className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-sm font-bold text-emerald-600 transition-colors hover:border-emerald-500 dark:text-emerald-400"
+              >
+                📥 Download the Android app (APK)
+              </a>
+              <p className="mt-1.5 text-[11px] text-slate-400">
+                Direct install — your phone may ask to allow "unknown sources"; that's normal for apps outside Play Store. Play Store version coming soon.
+              </p>
+            </motion.div>
             <motion.div {...fadeUp} transition={{ ...fadeUp.transition, delay: 0.28 }} className="mt-10 grid grid-cols-4 gap-4">
               {FAQ_STATS.map((s) => (
                 <div key={s.l}>
@@ -368,6 +380,7 @@ export default function Landing() {
             <Link to="/terms" className="transition-colors hover:text-brand-500">Terms</Link>
             <Link to="/privacy" className="transition-colors hover:text-brand-500">Privacy</Link>
             <a href="mailto:ernieblazze@gmail.com" className="transition-colors hover:text-brand-500">Support</a>
+            <a href="/creatorforge.apk" download className="transition-colors hover:text-brand-500">Android app</a>
           </div>
           <p className="text-sm text-slate-500">© {new Date().getFullYear()} CreatorForge. Built for hustlers, by hustlers. 🇳🇬</p>
         </div>
