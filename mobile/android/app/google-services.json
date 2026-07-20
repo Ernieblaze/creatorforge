@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "341767079050",
+    "project_id": "creatorforge-5da95",
+    "storage_bucket": "creatorforge-5da95.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:341767079050:android:a8a3ed1c60a217fc631973",
+        "android_client_info": {
+          "package_name": "app.creatorforge.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCuf5H7ttd3ORyOgNIKjoMRie-2HOQl6uU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
