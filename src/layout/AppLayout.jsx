@@ -7,6 +7,7 @@ import {
 import { Logo, ThemeToggle } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { TOOLS } from '../lib/tools'
+import { isNative } from '../lib/native'
 import { isToolEnabled } from '../lib/adminData'
 import { getActiveAnnouncement, subscribeAnnouncements } from '../lib/announcements'
 import StrategistDock from '../components/StrategistDock'
@@ -62,7 +63,8 @@ function InstallPrompt() {
     return () => window.removeEventListener('beforeinstallprompt', onPrompt)
   }, [])
 
-  if (dismissed || isStandalone) return null
+  // Never prompt to "install" inside the native app — they already have it.
+  if (isNative || dismissed || isStandalone) return null
   if (!deferred && !isIOS) return null
 
   const dismiss = () => { localStorage.setItem('cf_install_dismissed', '1'); setDismissed(true) }
