@@ -227,10 +227,10 @@ export default function Landing() {
                   download
                   className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-sm font-bold text-emerald-600 transition-colors hover:border-emerald-500 dark:text-emerald-400"
                 >
-                  📥 Download the Android app (APK)
+                  📥 Get the Android app — <span className="ml-1 rounded-md bg-emerald-500/20 px-1.5 py-0.5">+10 free credits</span>
                 </a>
                 <p className="mt-1.5 text-[11px] text-slate-400">
-                  Direct install — your phone may ask to allow "unknown sources"; that's normal for apps outside Play Store. Play Store version coming soon.
+                  Install the app and get <b className="text-emerald-500">10 bonus credits</b> on first open. Your phone may warn about "unknown sources" — that's normal outside Play Store. Play Store version coming soon.
                 </p>
               </motion.div>
             )}

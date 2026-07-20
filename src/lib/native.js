@@ -62,3 +62,35 @@ export async function initNativeAuth(supabase, onSignedIn) {
     else console.error('exchangeCodeForSession failed:', error.message)
   })
 }
+
+/**
+ * Register for push notifications and save the device's FCM token.
+ * Inert until the app is built with the PushNotifications native plugin +
+ * Firebase config — `isPluginAvailable` is false without them, so nothing
+ * runs (no permission prompt, no error) on builds that don't have push yet.
+ */
+let pushBound = false
+export async function initNativePush(supabase, userId) {
+  if (!isNative || pushBound || !supabase || !userId) return
+  if (!Capacitor.isPluginAvailable('PushNotifications')) return
+  pushBound = true
+  const { PushNotifications } = await import('@capacitor/push-notifications')
+
+  const perm = await PushNotifications.requestPermissions()
+  if (perm.receive !== 'granted') return
+
+  PushNotifications.addListener('registration', async ({ value }) => {
+    await supabase.rpc('save_device_token', { p_token: value, p_platform: 'android' })
+  })
+  PushNotifications.addListener('registrationError', (e) => {
+    console.warn('Push registration error:', e?.error)
+  })
+  // Tapping a notification can carry a { path } to open a specific page.
+  PushNotifications.addListener('pushNotificationActionPerformed', ({ notification }) => {
+    const path = notification?.data?.path
+    if (path && typeof path === 'string' && path.startsWith('/')) {
+      window.location.assign(path)
+    }
+  })
+  await PushNotifications.register()
+}

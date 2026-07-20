@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>CreatorForge — Offline</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh; display: grid; place-items: center; text-align: center;
+      padding: 28px; background: #0b0d14; color: #e7e9f0;
+      font-family: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+      -webkit-user-select: none; user-select: none;
+    }
+    .logo {
+      width: 88px; height: 88px; border-radius: 24px; display: grid; place-items: center;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      box-shadow: 0 12px 40px rgba(124, 58, 237, 0.4); margin: 0 auto 22px;
+    }
+    h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+    p { margin-top: 10px; font-size: 14px; line-height: 1.6; color: #94a3b8; max-width: 300px; }
+    button {
+      margin-top: 26px; padding: 13px 30px; border: 0; border-radius: 14px; cursor: pointer;
+      font-size: 15px; font-weight: 700; color: #fff;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
+    }
+    button:active { transform: scale(0.97); }
+    .hint { margin-top: 16px; font-size: 12px; color: #64748b; }
+  </style>
+</head>
+<body>
+  <div>
+    <div class="logo">
+      <svg width="40" height="40" viewBox="0 0 64 64"><path d="M40 14 26 34h7l-4 16 14-22h-7l4-14z" fill="#fff"/></svg>
+    </div>
+    <h1>You're offline</h1>
+    <p>CreatorForge needs an internet connection. Reconnect to Wi-Fi or mobile data, then tap Retry.</p>
+    <button onclick="location.href='https://creatorforge-sage.vercel.app'">Retry</button>
+    <p class="hint">Your saved content is safe — it's waiting for you online.</p>
+  </div>
+  <script>
+    // Auto-retry the moment the device comes back online.
+    window.addEventListener('online', () => { location.href = 'https://creatorforge-sage.vercel.app' })
+  </script>
+</body>
+</html>

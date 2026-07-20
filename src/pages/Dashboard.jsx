@@ -7,6 +7,8 @@ import { getStats, getUsageToday, applyPendingReferral } from '../lib/db'
 import { getMyPartner, listMyCommissions, nairaFromKobo, partnersAvailable } from '../lib/partners'
 import { TOOLS, getTool } from '../lib/tools'
 import { isToolEnabled } from '../lib/adminData'
+import { isNative } from '../lib/native'
+import { supabase } from '../lib/supabase'
 import { useToast } from '../components/toast'
 import Onboarding from '../components/Onboarding'
 
@@ -45,6 +47,17 @@ export default function Dashboard() {
     applyPendingReferral(user.id).then((granted) => {
       if (granted) {
         toast('🎁 Invite bonus applied — you got +5 bonus credits!')
+        refreshProfile()
+      }
+    })
+  }, [user, profile]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // First open inside the Android app → one-time +10 bonus credits.
+  useEffect(() => {
+    if (!isNative || !user || !profile || profile.app_bonus_claimed || !supabase) return
+    supabase.rpc('claim_app_bonus').then(({ data }) => {
+      if (data?.granted) {
+        toast('🎁 +10 bonus credits for using the app — enjoy!')
         refreshProfile()
       }
     })

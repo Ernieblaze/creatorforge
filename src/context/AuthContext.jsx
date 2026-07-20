@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase, isSupabaseConfigured, isAdminEmail } from '../lib/supabase'
 import { getProfile, upsertProfile } from '../lib/db'
-import { isNative, signInWithGoogleNative, initNativeAuth } from '../lib/native'
+import { isNative, signInWithGoogleNative, initNativeAuth, initNativePush } from '../lib/native'
 
 /**
  * Auth context. With Supabase configured it uses Google OAuth; without it,
@@ -21,6 +21,8 @@ export function AuthProvider({ children }) {
     let p = await getProfile(u.id)
     if (!p) p = await upsertProfile(u.id, { email: u.email, plan: 'free' })
     setProfile(p)
+    // Register this device for push once we know who's signed in.
+    initNativePush(supabase, u.id)
   }, [])
 
   useEffect(() => {
