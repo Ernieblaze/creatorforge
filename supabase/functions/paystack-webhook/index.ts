@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
         if (partner) {
           const amountKobo = Math.round(data.amount * (partner.commission_percent / 100));
           if (amountKobo > 0) {
-            await admin.from("partner_commissions").upsert(
+            const { data: inserted } = await admin.from("partner_commissions").upsert(
               {
                 partner_id: partner.user_id,
                 referred_user: userId,
@@ -114,7 +114,26 @@ Deno.serve(async (req) => {
                 amount_kobo: amountKobo,
               },
               { onConflict: "payment_reference", ignoreDuplicates: true },
-            );
+            ).select();
+            // Only push on a NEW commission (retried webhooks return []).
+            if (inserted && inserted.length > 0) {
+              try {
+                await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-push`, {
+                  method: "POST",
+                  headers: {
+                    "content-type": "application/json",
+                    "authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+                    "x-internal-key": Deno.env.get("INTERNAL_PUSH_KEY") ?? "",
+                  },
+                  body: JSON.stringify({
+                    title: "💰 You earned a commission!",
+                    body: `A referral just paid — ₦${(amountKobo / 100).toLocaleString()} added to your partner balance.`,
+                    user_id: partner.user_id,
+                    path: "/app/partner",
+                  }),
+                });
+              } catch (_) { /* push is best-effort — never block the payment */ }
+            }
           }
         }
       }
